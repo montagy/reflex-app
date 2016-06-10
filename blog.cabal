@@ -18,10 +18,16 @@ cabal-version:       >=1.10
 library 
   hs-source-dirs: src
   exposed-modules: Lib
+                 , Css
+
   build-depends: base >= 4.8 && < 5.0
                , reflex
                , reflex-dom
                , ghcjs-dom
+               , text
+               , file-embed
+               , clay
+               , bytestring
                , text
   ghc-prof-options: -fprof-auto
   ghc-options: -Wall -fwarn-tabs -funbox-strict-fields -O2
