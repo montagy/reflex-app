@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Lib (
   app
 ) where
@@ -18,7 +19,10 @@ app = mainWidget $
 getXhrContent :: forall t m. MonadWidget t m => m ()
 getXhrContent = do
   let req = xhrRequest "GET" "http://localhost:3030/users" def
-
+      eitherToText eRes = case eRes of
+                            Left _ -> Just "The server cant connect"
+                            Right res -> _xhrResponse_responseText res
   event <- getPostBuild
-  response <- fmap (fmap _xhrResponse_responseText) $ performRequestAsync $ req <$ event
+  afterDelay <- delay 5 $ req <$ event
+  response <- fmap eitherToText <$> performRequestAsyncWithError afterDelay
   dynText <=< holdDyn "Loading.." $ fmapMaybe (T.unpack <$>) response
