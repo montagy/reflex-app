@@ -19,8 +19,6 @@ css = do
     fontFamily [] [monospace]
     fontSize (em 1.5)
   header ? do
-    position fixed
-    top (px 0)
     width (pct 100)
   nav ? do
     backgroundColor (hsl 60 29 41)

@@ -19,6 +19,7 @@ library
   hs-source-dirs: src
   exposed-modules: Lib
                  , Css
+                 , Api
                  , Common.Types
 
   build-depends: base >= 4.8 && < 5.0
@@ -33,6 +34,10 @@ library
                , aeson
                , time
                , containers
+               , reflex-dom-contrib
+               , servant-router
+               , servant
+               , mtl
   ghc-prof-options: -fprof-auto
   ghc-options: -Wall -fwarn-tabs -funbox-strict-fields -O2
   default-language:    Haskell2010
