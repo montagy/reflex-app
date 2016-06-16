@@ -21,6 +21,8 @@ library
                  , Css
                  , Api
                  , Common.Types
+                 , Views.Home
+                 , Views.Post
 
   build-depends: base >= 4.8 && < 5.0
                , reflex
@@ -38,6 +40,8 @@ library
                , servant-router
                , servant
                , mtl
+               , transformers
+               , ref-tf
   ghc-prof-options: -fprof-auto
   ghc-options: -Wall -fwarn-tabs -funbox-strict-fields -O2
   default-language:    Haskell2010
