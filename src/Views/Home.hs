@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecursiveDo #-}
 module Views.Home (
   page
 ) where
@@ -6,6 +8,8 @@ module Views.Home (
 import Reflex
 import Reflex.Dom
 import Control.Monad
+{-import Data.Time-}
+{-import Control.Monad.IO.Class-}
 
 import qualified Data.Text as T
 import Common.Types
@@ -18,18 +22,25 @@ page =
     eArts <- fakeGetBlog
     dView <- holdDyn loading $ article <$> eArts
     void $ dyn dView
+
     dToggle <- toggle False =<< button "toggle"
     attrib <- mapDyn (\t -> if t then "style" =: "display:none" else "style" =: "display:block") dToggle
-    elDynAttr "div" attrib topicInput
+    eTopic <- elDynAttr "div" attrib topicInput
+    divClass "topic" $
+      display =<< holdDyn (Topic "fake" "fake" Nothing) eTopic
+
     el "hr" (return ())
     el "p" $ text "This is a new text line"
 
-topicInput :: MonadWidget t m => m ()
+topicInput :: MonadWidget t m => m (Event t Topic)
 topicInput = do
-  _ <- textInput def
-  _<- textInput def
-  _ <- button "Submit"
-  pure ()
+  rec
+      titleInput  <- textInput $ def & setValue .~ ("" <$ result)
+      contentInput <- textInput $ def & setValue .~ ("" <$ result)
+      submit <- button "Submit"
+      dTopic <- Topic `mapDyn` value titleInput `apDyn` value contentInput `apDyn` constDyn Nothing
+      let result = ffilter (\topic -> (not . null . topicTitle) topic && (not . null . topicContent) topic ) $ attachWith const (current dTopic) submit
+  return result
 
 navWidget :: MonadWidget t m => m ()
 navWidget =
