@@ -18,9 +18,18 @@ page =
     eArts <- fakeGetBlog
     dView <- holdDyn loading $ article <$> eArts
     void $ dyn dView
-    {-elClass "div" "content"  $ elClass "ul" "blogs" $ articleInfoListV eArts-}
-    {-pure never-}
+    dToggle <- toggle False =<< button "toggle"
+    attrib <- mapDyn (\t -> if t then "style" =: "display:none" else "style" =: "display:block") dToggle
+    elDynAttr "div" attrib topicInput
+    el "hr" (return ())
+    el "p" $ text "This is a new text line"
 
+topicInput :: MonadWidget t m => m ()
+topicInput = do
+  _ <- textInput def
+  _<- textInput def
+  _ <- button "Submit"
+  pure ()
 
 navWidget :: MonadWidget t m => m ()
 navWidget =
