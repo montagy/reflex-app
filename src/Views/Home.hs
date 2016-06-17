@@ -1,6 +1,3 @@
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE GADTs #-}
 module Views.Home (
   page
 ) where
@@ -14,11 +11,11 @@ import qualified Data.Text as T
 import Common.Types
 import Api (fakeGetBlog)
 
-page :: forall t m .MonadWidget t m => m ()
+page :: MonadWidget t m => m ()
 page =
   elClass "div" "main" $ do
     el  "header" navWidget
-    eArts :: Event t Article<- fakeGetBlog
+    eArts <- fakeGetBlog
     dView <- holdDyn loading $ article <$> eArts
     void $ dyn dView
     {-elClass "div" "content"  $ elClass "ul" "blogs" $ articleInfoListV eArts-}
@@ -35,7 +32,7 @@ navWidget =
 loading :: MonadWidget t m => m ()
 loading = divClass "loading" $ text "loading..."
 
-article :: forall t m. MonadWidget t m => Article -> m ()
+article :: MonadWidget t m => Article -> m ()
 article art =
   divClass "article" $ do
     text $ T.unpack . title $ art
