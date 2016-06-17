@@ -16,3 +16,23 @@ data Article = Article
 
 instance ToJSON Article
 instance FromJSON Article
+
+data Topic = Topic
+  { topicTitle :: Text
+  , topicContent :: Text
+  , topicComment :: Maybe [Comment]
+  } deriving (Eq, Show, Generic)
+
+data Comment = Comment
+  { commentSide :: CommentSide
+  , commentContent :: Text
+  } deriving (Eq, Show, Generic)
+
+data CommentSide = Agree | Against deriving (Eq, Show, Generic)
+
+instance ToJSON CommentSide
+instance FromJSON CommentSide
+instance ToJSON Comment
+instance FromJSON Comment
+instance ToJSON Topic
+instance FromJSON Topic
