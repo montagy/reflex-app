@@ -18,14 +18,14 @@ instance ToJSON Article
 instance FromJSON Article
 
 data Topic = Topic
-  { topicTitle :: Text
-  , topicContent :: Text
+  { topicTitle :: String
+  , topicContent :: String
   , topicComment :: Maybe [Comment]
   } deriving (Eq, Show, Generic)
 
 data Comment = Comment
   { commentSide :: CommentSide
-  , commentContent :: Text
+  , commentContent :: String
   } deriving (Eq, Show, Generic)
 
 data CommentSide = Agree | Against deriving (Eq, Show, Generic)

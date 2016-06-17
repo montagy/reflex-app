@@ -25,5 +25,6 @@ fakeGetBlog :: MonadWidget t m => m (Event t Article)
 fakeGetBlog = do
   time <- liftIO getCurrentTime
   let art = Article (Just "ididi") "Fake Article" "Fake content" (Just time)
-  event <- getPostBuild
+
+  event <- getPostBuild >>= delay 2
   return $ art <$ event

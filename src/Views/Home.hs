@@ -26,11 +26,13 @@ page =
     dToggle <- toggle False =<< button "toggle"
     attrib <- mapDyn (\t -> if t then "style" =: "display:none" else "style" =: "display:block") dToggle
     eTopic <- elDynAttr "div" attrib topicInput
-    divClass "topic" $
-      display =<< holdDyn (Topic "fake" "fake" Nothing) eTopic
+    topic eTopic
 
     el "hr" (return ())
     el "p" $ text "This is a new text line"
+
+initialTopic :: Topic
+initialTopic = Topic "fake" "fake" Nothing
 
 topicInput :: MonadWidget t m => m (Event t Topic)
 topicInput = do
@@ -39,9 +41,24 @@ topicInput = do
       contentInput <- textInput $ def & setValue .~ ("" <$ result)
       submit <- button "Submit"
       dTopic <- Topic `mapDyn` value titleInput `apDyn` value contentInput `apDyn` constDyn Nothing
-      let result = ffilter (\topic -> (not . null . topicTitle) topic && (not . null . topicContent) topic ) $ attachWith const (current dTopic) submit
+      let result = ffilter (\t -> (not . null . topicTitle) t && (not . null . topicContent) t ) $ attachWith const (current dTopic) submit
   return result
 
+topic :: MonadWidget t m => Event t Topic -> m ()
+topic submitTopic =
+  divClass "topic" $ do
+    divClass "topic__main" $ display =<< holdDyn initialTopic submitTopic
+    dToggle <- toggle False =<< button "Add New"
+    attrib <- mapDyn (\t -> if t then "style" =: "display:none" else "style" =: "display:block") dToggle
+    _ <- elDynAttr "div" attrib commentInput
+    pure ()
+
+commentInput :: MonadWidget t m => m ()
+commentInput = do
+  _ <- textInput def
+  _ <- textInput def
+  _ <- button "Submit"
+  pure ()
 navWidget :: MonadWidget t m => m ()
 navWidget =
   el "nav"  $
