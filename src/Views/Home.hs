@@ -1,5 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecursiveDo #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Views.Home (
   page
 ) where
@@ -8,28 +10,38 @@ module Views.Home (
 import Reflex
 import Reflex.Dom
 import Control.Monad
-{-import Data.Time-}
-{-import Control.Monad.IO.Class-}
+import Data.Monoid
+import Data.Map (Map)
 
 import qualified Data.Text as T
 import Common.Types
-import Api (fakeGetBlog)
+import Api (fakeGetData)
 
+        {-dToggle <- toggle False =<< button "toggle"-}
+        {-attrib <- mapDyn (\t -> if t then "style" =: "display:none" else "style" =: "display:block") dToggle-}
+        {-eTopic <- elDynAttr "div" attrib topicInput-}
+        {-topic eTopic-}
 page :: MonadWidget t m => m ()
-page =
-  elClass "div" "main" $ do
-    el  "header" navWidget
-    eArts <- fakeGetBlog
-    dView <- holdDyn loading $ article <$> eArts
-    void $ dyn dView
+page = do
+  header
+  divClass "container" $ do
+    eData <- fakeGetData
+    dView <- holdDyn loading $ topicView <$> eData
+    divClass "topic_wrapper" $
+      void $ dyn dView
+    divClass "xiaohua_wrapper radius" $
+      divClass "xiaohua" $ text "滚动的笑话"
+  footer
 
-    dToggle <- toggle False =<< button "toggle"
-    attrib <- mapDyn (\t -> if t then "style" =: "display:none" else "style" =: "display:block") dToggle
-    eTopic <- elDynAttr "div" attrib topicInput
-    topic eTopic
+footer :: MonadWidget t m => m ()
+footer = do
+  elClass "footer" "clear" $ el "div" $ text "This is a new text line"
+  pure ()
 
-    el "hr" (return ())
-    el "p" $ text "This is a new text line"
+header :: MonadWidget t m => m ()
+header = do
+  el "header" navWidget
+  pure ()
 
 initialTopic :: Topic
 initialTopic = Topic "fake" "fake" Nothing
@@ -44,37 +56,65 @@ topicInput = do
       let result = ffilter (\t -> (not . null . topicTitle) t && (not . null . topicContent) t ) $ attachWith const (current dTopic) submit
   return result
 
-topic :: MonadWidget t m => Event t Topic -> m ()
-topic submitTopic =
-  divClass "topic" $ do
-    divClass "topic__main" $ display =<< holdDyn initialTopic submitTopic
-    dToggle <- toggle False =<< button "Add New"
-    attrib <- mapDyn (\t -> if t then "style" =: "display:none" else "style" =: "display:block") dToggle
-    _ <- elDynAttr "div" attrib commentInput
-    pure ()
+{-topic :: MonadWidget t m => Event t Topic -> m ()-}
+{-topic submitTopic =-}
+  {-divClass "topic" $ do-}
+    {-divClass "topic__main" $ display =<< holdDyn initialTopic submitTopic-}
+    {-dToggle <- toggle False =<< button "Add New"-}
+    {-attrib <- mapDyn (\t -> if t then "style" =: "display:none" else mempty) dToggle-}
+    {-_ <- elDynAttr "div" attrib commentInput-}
+    {-pure ()-}
 
-commentInput :: MonadWidget t m => m ()
-commentInput = do
-  _ <- textInput def
-  _ <- textInput def
-  _ <- button "Submit"
-  pure ()
 navWidget :: MonadWidget t m => m ()
 navWidget =
-  el "nav"  $
-    elClass "ul" "list" $ do
-      el "li" $ elAttr "a" ("href" =: "/") $ text "Home"
-      el "li" $ elAttr "a" ("href" =: "/post") $ text "Post"
+  elClass "nav" "container" $
+    divClass "nav__content" $ text "吵架与看笑话"
 
 loading :: MonadWidget t m => m ()
 loading = divClass "loading" $ text "loading..."
 
-article :: MonadWidget t m => Article -> m ()
-article art =
-  divClass "article" $ do
-    text $ T.unpack . title $ art
-    text $ show . createTime $ art
-    pure ()
+topicView :: MonadWidget t m => Topic -> m ()
+topicView Topic{..}= do
+  divClass "topic radius" $ do
+    divClass "topic__title" $ text topicTitle
+    divClass "topic__content" $ text topicContent
+  divClass "comment radius" $
+    case topicComments of
+      Nothing -> pure ()
+      Just comments -> commentsView comments
+
+  pure ()
+
+comment :: MonadWidget t m => Dynamic t Comment -> m ()
+comment c = do
+  content <- mapDyn commentContent c
+  divClass "comment__item" $ dynText content
+  pure ()
+commentsView :: MonadWidget t m => [Comment] -> m ()
+commentsView comments = do
+  rec
+    let eSubmit = ffilter (== keycodeEnter) $ _textArea_keypress area
+        dContent = _textArea_value area
+        dSide = _dropdown_value drop
+        selectList = Agree =: "agree" <> Against =: "against"
+
+    dNewComment <- combineDyn Comment dSide dContent
+    let eRealSubmit = tag (current dNewComment ) eSubmit
+
+    dComments <- foldDyn (:) comments eRealSubmit
+    dAgreeComments <- mapDyn (filter (\x -> commentSide x == Agree)) dComments
+    dAgainstComments <- mapDyn (filter (\x -> commentSide x == Against)) dComments
+    divClass "comment__left" $
+      simpleList dAgreeComments comment
+    divClass "comment__right" $
+      simpleList dAgainstComments comment
+
+    (drop, area) <- divClass "comment__input clear" $ do
+      drop' <- dropdown Agree (constDyn selectList) def
+      area' <- textArea $ def & setValue .~ ("" <$ eSubmit)
+      pure (drop', area')
+  pure ()
+
 {-
  -articleInfoV :: MonadWidget t m => Dynamic t Article-> m ()
  -articleInfoV dArt =

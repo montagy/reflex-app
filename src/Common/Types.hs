@@ -20,7 +20,7 @@ instance FromJSON Article
 data Topic = Topic
   { topicTitle :: String
   , topicContent :: String
-  , topicComment :: Maybe [Comment]
+  , topicComments :: Maybe [Comment]
   } deriving (Eq, Show, Generic)
 
 data Comment = Comment
@@ -28,7 +28,7 @@ data Comment = Comment
   , commentContent :: String
   } deriving (Eq, Show, Generic)
 
-data CommentSide = Agree | Against deriving (Eq, Show, Generic)
+data CommentSide = Agree | Against deriving (Enum, Ord, Eq, Show, Generic, Read)
 
 instance ToJSON CommentSide
 instance FromJSON CommentSide
