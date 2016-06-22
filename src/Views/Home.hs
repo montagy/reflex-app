@@ -19,10 +19,6 @@ import qualified Data.Text as T
 import Common.Types
 import Api (fakeGetData)
 
-        {-dToggle <- toggle False =<< button "toggle"-}
-        {-attrib <- mapDyn (\t -> if t then "style" =: "display:none" else "style" =: "display:block") dToggle-}
-        {-eTopic <- elDynAttr "div" attrib topicInput-}
-        {-topic eTopic-}
 page :: MonadWidget t m => m ()
 page = do
   header
@@ -37,7 +33,7 @@ page = do
 
 footer :: MonadWidget t m => m ()
 footer = do
-  elClass "footer" "clear" $ el "div" $ text "This is a new text line"
+  el "footer"  $ el "div" $ text "This is a new text line"
   pure ()
 
 header :: MonadWidget t m => m ()
@@ -69,7 +65,7 @@ topicInput = do
 
 navWidget :: MonadWidget t m => m ()
 navWidget =
-  elClass "nav" "container" $
+  el "nav" $
     divClass "nav__content" $ text "吵架与看笑话"
 
 loading :: MonadWidget t m => m ()
@@ -102,9 +98,14 @@ commentEntry = divClass "comment__input clear" $ do
         eNewComment = attachDynWith Comment dSide eContent
         selectList = Agree =: "agree" <> Against =: "against"
 
-    drop <- dropdown Agree (constDyn selectList) def
-    area <- textArea $ def & setValue .~ ("" <$ eSubmit)
-    eSubmit <- button "submit"
+    drop <- dropdown Agree (constDyn selectList) $ def &
+      attributes .~ constDyn ("class" =: "form-control")
+    area <- textArea $ def & setValue .~ ("" <$ eSubmit) &
+      attributes .~ constDyn (mconcat ["class" =: "form-control",
+                                      "row" =: "3"])
+    eSubmit <- do
+      (e, _) <- elAttr' "button" (mconcat ["type" =: "button", "class" =: "form-control"]) $ text "Submit"
+      pure $ domEvent Click e
   return eNewComment
 
 commentsView :: MonadWidget t m => [Comment] -> m ()
@@ -113,13 +114,12 @@ commentsView comments = do
     dComments <- foldDyn insertNew_ (Map.fromList $ zip [1..] comments) eNewComment
     dAgreeComments <- mapDyn (Map.filter (\x -> commentSide x == Agree)) dComments
     dAgainstComments <- mapDyn (Map.filter (\x -> commentSide x == Against)) dComments
-    divClass "comment__left" $
+    _ <- divClass "comment__left" $
       listWithKey dAgreeComments comment
-    divClass "comment__right" $
+    _ <-divClass "comment__right" $
       listWithKey dAgainstComments comment
 
     eNewComment <- commentEntry
-    {-divClass "message" $ dynText dMsg-}
   pure ()
 
 stripString :: String -> String
