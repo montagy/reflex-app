@@ -2,6 +2,7 @@
 {-# LANGUAGE RecursiveDo #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ViewPatterns #-}
 module Views.Home (
   page
 ) where
@@ -12,6 +13,7 @@ import Reflex.Dom
 import Control.Monad
 import Data.Monoid
 import Data.Map (Map)
+import qualified Data.Map as Map
 
 import qualified Data.Text as T
 import Common.Types
@@ -85,36 +87,52 @@ topicView Topic{..}= do
 
   pure ()
 
-comment :: MonadWidget t m => Dynamic t Comment -> m ()
-comment c = do
+comment :: MonadWidget t m => Int -> Dynamic t Comment -> m ()
+comment _ c = do
   content <- mapDyn commentContent c
   divClass "comment__item" $ dynText content
   pure ()
+
+commentEntry :: MonadWidget t m => m (Event t Comment)
+commentEntry = divClass "comment__input clear" $ do
+  rec
+    let
+        eContent = fmapMaybe maybeStrip $ tag (current $ _textArea_value area) eSubmit
+        dSide = _dropdown_value drop
+        eNewComment = attachDynWith Comment dSide eContent
+        selectList = Agree =: "agree" <> Against =: "against"
+
+    drop <- dropdown Agree (constDyn selectList) def
+    area <- textArea $ def & setValue .~ ("" <$ eSubmit)
+    eSubmit <- button "submit"
+  return eNewComment
+
 commentsView :: MonadWidget t m => [Comment] -> m ()
 commentsView comments = do
   rec
-    let eSubmit = ffilter (== keycodeEnter) $ _textArea_keypress area
-        dContent = _textArea_value area
-        dSide = _dropdown_value drop
-        selectList = Agree =: "agree" <> Against =: "against"
-
-    dNewComment <- combineDyn Comment dSide dContent
-    let eRealSubmit = tag (current dNewComment ) eSubmit
-
-    dComments <- foldDyn (:) comments eRealSubmit
-    dAgreeComments <- mapDyn (filter (\x -> commentSide x == Agree)) dComments
-    dAgainstComments <- mapDyn (filter (\x -> commentSide x == Against)) dComments
+    dComments <- foldDyn insertNew_ (Map.fromList $ zip [1..] comments) eNewComment
+    dAgreeComments <- mapDyn (Map.filter (\x -> commentSide x == Agree)) dComments
+    dAgainstComments <- mapDyn (Map.filter (\x -> commentSide x == Against)) dComments
     divClass "comment__left" $
-      simpleList dAgreeComments comment
+      listWithKey dAgreeComments comment
     divClass "comment__right" $
-      simpleList dAgainstComments comment
+      listWithKey dAgainstComments comment
 
-    (drop, area) <- divClass "comment__input clear" $ do
-      drop' <- dropdown Agree (constDyn selectList) def
-      area' <- textArea $ def & setValue .~ ("" <$ eSubmit)
-      pure (drop', area')
+    eNewComment <- commentEntry
+    {-divClass "message" $ dynText dMsg-}
   pure ()
 
+stripString :: String -> String
+stripString  = T.unpack . T.strip . T.pack
+
+maybeStrip :: String -> Maybe String
+maybeStrip (stripString -> "") = Nothing
+maybeStrip (stripString -> trimmed) = Just trimmed
+-- | Add a new value to a map; automatically choose an unused key
+insertNew_ :: (Enum k, Ord k) => v -> Map k v -> Map k v
+insertNew_ v m = case Map.maxViewWithKey m of
+  Nothing -> Map.singleton (toEnum 0) v
+  Just ((k, _), _) -> Map.insert (succ k) v m
 {-
  -articleInfoV :: MonadWidget t m => Dynamic t Article-> m ()
  -articleInfoV dArt =
