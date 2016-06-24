@@ -3,10 +3,10 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE LambdaCase #-}
 module Views.Home (
   page
 ) where
-
 
 import Reflex
 import Reflex.Dom
@@ -17,76 +17,49 @@ import qualified Data.Map as Map
 
 import qualified Data.Text as T
 import Common.Types
-import Api (fakeGetData)
+import Api
 
 page :: MonadWidget t m => m ()
 page = do
   header
   divClass "container" $ do
-    eData <- fakeGetData
-    dView <- holdDyn loading $ topicView <$> eData
-    divClass "topic_wrapper" $
-      void $ dyn dView
-    divClass "xiaohua_wrapper radius" $
-      divClass "xiaohua" $ text "滚动的笑话"
+    rec
+      {-dItem <- traceDyn "clicked" <$> holdDyn "" (show <$> eItemClick)-}
+      eTopic' <- widgetHold (fakeGetData "inital") (fakeGetData . show <$> eItemClick)
+      {-fake <- fakeGetData "inital"-}
+      let eTopic = switchPromptlyDyn eTopic'
+--begin
+      {-eTopic <- fakeGetData "inital"-}
+      eTopicList <- getTopicList
+--data already
+      divClass "topic_wrapper" $ topicView eTopic
+      eItemClick <- divClass "xiaohua_wrapper raiuds" $ topicList eTopicList
+    pure ()
   footer
 
-footer :: MonadWidget t m => m ()
-footer = do
-  el "footer"  $ el "div" $ text "This is a new text line"
-  pure ()
+topicList :: MonadWidget t m =>Event t [Topic] -> m (Event t Int)
+topicList eTs = do
+  let
+      view :: (MonadWidget t m ) => Int -> Dynamic t Topic -> m (Event t Int)
+      view k dT = do
+        (dom, _) <- elAttr' "div" ("class" =: "xiaohua") $ dynText =<< mapDyn topicTitle dT
+        pure $ k <$ domEvent Click dom
 
-header :: MonadWidget t m => m ()
-header = do
-  el "header" navWidget
-  pure ()
+  dTs <- holdDyn Map.empty $  Map.fromList . zip [1..] <$> eTs
+  selectEntry <- listWithKey dTs view
+  switchPromptlyDyn <$> mapDyn (leftmost . Map.elems) selectEntry
 
 initialTopic :: Topic
-initialTopic = Topic "fake" "fake" Nothing
+initialTopic = Topic Nothing "init title" "init content" Nothing
 
-topicInput :: MonadWidget t m => m (Event t Topic)
-topicInput = do
-  rec
-      titleInput  <- textInput $ def & setValue .~ ("" <$ result)
-      contentInput <- textInput $ def & setValue .~ ("" <$ result)
-      submit <- button "Submit"
-      dTopic <- Topic `mapDyn` value titleInput `apDyn` value contentInput `apDyn` constDyn Nothing
-      let result = ffilter (\t -> (not . null . topicTitle) t && (not . null . topicContent) t ) $ attachWith const (current dTopic) submit
-  return result
-
-{-topic :: MonadWidget t m => Event t Topic -> m ()-}
-{-topic submitTopic =-}
-  {-divClass "topic" $ do-}
-    {-divClass "topic__main" $ display =<< holdDyn initialTopic submitTopic-}
-    {-dToggle <- toggle False =<< button "Add New"-}
-    {-attrib <- mapDyn (\t -> if t then "style" =: "display:none" else mempty) dToggle-}
-    {-_ <- elDynAttr "div" attrib commentInput-}
-    {-pure ()-}
-
-navWidget :: MonadWidget t m => m ()
-navWidget =
-  el "nav" $
-    divClass "nav__content" $ text "吵架与看笑话"
-
-loading :: MonadWidget t m => m ()
-loading = divClass "loading" $ text "loading..."
-
-topicView :: MonadWidget t m => Topic -> m ()
-topicView Topic{..}= do
+topicView :: MonadWidget t m => Event t Topic -> m ()
+topicView eTopic = do
+  dTopic <- holdDyn initialTopic eTopic
   divClass "topic radius" $ do
-    divClass "topic__title" $ text topicTitle
-    divClass "topic__content" $ text topicContent
-  divClass "comment radius" $
-    case topicComments of
-      Nothing -> pure ()
-      Just comments -> commentsView comments
+    divClass "topic__title" $ dynText =<< mapDyn topicTitle dTopic
+    divClass "topic__content" $ dynText =<< mapDyn topicContent dTopic
 
-  pure ()
-
-comment :: MonadWidget t m => Int -> Dynamic t Comment -> m ()
-comment _ c = do
-  content <- mapDyn commentContent c
-  divClass "comment__item" $ dynText content
+  divClass "comment radius" (commentsView =<< mapDyn topicComments dTopic)
   pure ()
 
 commentEntry :: MonadWidget t m => m (Event t Comment)
@@ -108,10 +81,21 @@ commentEntry = divClass "comment__input clear" $ do
       pure $ domEvent Click e
   return eNewComment
 
-commentsView :: MonadWidget t m => [Comment] -> m ()
-commentsView comments = do
+commentsView :: MonadWidget t m =>Dynamic t (Maybe [Comment])-> m ()
+commentsView dmComments = do
+  let
+    comment :: MonadWidget t m => Int -> Dynamic t Comment -> m ()
+    comment _ c = do
+      content <- mapDyn commentContent c
+      divClass "comment__item" $ dynText content
+      pure ()
+
+  dComments' <- forDyn dmComments $
+    \case
+        Nothing -> Map.empty
+        Just comments -> Map.fromList $ zip [1..] comments
   rec
-    dComments <- foldDyn insertNew_ (Map.fromList $ zip [1..] comments) eNewComment
+    dComments <- combineDyn (foldr insertNew_)  dComments' =<< foldDyn (:) [] eNewComment
     dAgreeComments <- mapDyn (Map.filter (\x -> commentSide x == Agree)) dComments
     dAgainstComments <- mapDyn (Map.filter (\x -> commentSide x == Against)) dComments
     _ <- divClass "comment__left" $
@@ -133,20 +117,32 @@ insertNew_ :: (Enum k, Ord k) => v -> Map k v -> Map k v
 insertNew_ v m = case Map.maxViewWithKey m of
   Nothing -> Map.singleton (toEnum 0) v
   Just ((k, _), _) -> Map.insert (succ k) v m
-{-
- -articleInfoV :: MonadWidget t m => Dynamic t Article-> m ()
- -articleInfoV dArt =
- -  elClass "li" "blog_info" $ do
- -    dynTitle <- mapDyn (T.unpack . title) dArt
- -    dynTime <- mapDyn (show . createTime) dArt
- -    el "div" $ dynText dynTitle
- -    el "div" $ dynText dynTime
- -    pure ()
- -
- -articleInfoListV :: MonadWidget t m => Event t [Article] -> m ()
- -articleInfoListV eArts = do
- -  dynArts :: Dynamic t [Article] <- holdDyn [] eArts
- -  _ <- simpleList dynArts articleInfoV
- -  pure ()
- -}
 
+footer :: MonadWidget t m => m ()
+footer = do
+  el "footer"  $ el "div" $ text "This is a new text line"
+  pure ()
+
+header :: MonadWidget t m => m ()
+header = do
+  el "header" navWidget
+  pure ()
+
+loading :: MonadWidget t m => m ()
+loading = divClass "loading" $ text "loading..."
+
+navWidget :: MonadWidget t m => m ()
+navWidget =
+  el "nav" $
+    divClass "nav__content" $ text "吵架与看笑话"
+
+topicInput :: MonadWidget t m => m (Event t Topic)
+topicInput = do
+  rec
+      titleInput  <- textInput $ def & setValue .~ ("" <$ result)
+      contentInput <- textInput $ def & setValue .~ ("" <$ result)
+      submit <- button "Submit"
+      dTopic <- Topic `mapDyn` constDyn Nothing `apDyn` value titleInput `apDyn` value contentInput `apDyn` constDyn Nothing
+      let result = ffilter (\t -> (not . null . topicTitle) t && (not . null . topicContent) t ) $
+              attachWith const (current dTopic) submit
+  return result
