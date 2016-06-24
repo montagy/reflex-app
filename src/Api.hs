@@ -1,7 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Api (
   getBlogs,
-  fakeGetData
+  fakeGetData,
+  getTopicList
 ) where
 
 import Common.Types
@@ -21,11 +22,25 @@ getBlogs = do
 {-getUsers :: XhrRequest-}
 {-getUsers = xhrRequest "GET" "http://localhost:3030/users" def-}
 
-fakeGetData :: MonadWidget t m => m (Event t Topic)
-fakeGetData = do
+topics :: [Topic]
+topics = [Topic (Just "1") "t1" "content1" Nothing, Topic (Just "2") "t2" "content2" Nothing]
+
+fakeGetData :: MonadWidget t m => String -> m (Event t Topic)
+fakeGetData s = do
   let
     comment = Just [Comment Agree "打一架", Comment Agree "说的好", Comment Against "放狗屁"]
-    art = Topic "Fake Title" "Fake content" comment
+    art0 = Topic (Just "Fake id") "Fake Title" "Fake content" comment
+    art1 = topics !! 0
+    art2 = topics !! 1
+    art  = case s of
+            "1" -> art1
+            "2" -> art2
+            _ -> art0
 
+  e <- getPostBuild
+  delay 1 (art <$ e)
+
+getTopicList :: MonadWidget t m => m (Event t [Topic])
+getTopicList = do
   event <- delay 1 =<< getPostBuild
-  return $ art <$ event
+  return $ topics <$ event

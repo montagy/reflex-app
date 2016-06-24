@@ -16,8 +16,9 @@ bs = TE.encodeUtf8 . TL.toStrict . render $ css
 headerHeight, headerBottom, mainWidth, footerHeight :: Double
 headerHeight = 42
 headerBottom = 20
-mainWidth = 960
+mainWidth    = 1080
 footerHeight = 40
+{-gutter = 10-}
 
 fixedTop :: Css
 fixedTop = do
@@ -77,15 +78,19 @@ css = do
     display flex
     flexFlow row F.nowrap
     justifyContent spaceBetween
-    ".topic_wrapper" ? width (px 590)
+    ".topic_wrapper" ? width (pct 66)
 
     ".xiaohua_wrapper" ? do
-      width $ px 360
+      width $ pct 33
       textAlign (alignSide sideCenter)
       ".xiaohua" ? do
         boxShadow nil (px 2) (px 5) (rgba 0 0 0 51)
         sym padding (px 10)
         backgroundColor white
+        cursor pointer
+        hover & do
+          backgroundColor blue
+
 
   ".topic" ? do
     width $ pct 100
@@ -116,10 +121,10 @@ css = do
       borderTop solid (px 1) "#f2f2f2"
 
     ".comment__left" ? do
-      width $ px 290
+      width $ pct 49
 
     ".comment__right" ? do
-      width $ px 290
+      width $ pct 49
 
     ".comment__input" ? do
       width $ pct 100
@@ -128,7 +133,7 @@ css = do
   ".radius" ? sym borderRadius (px 5)
   textarea # ".form-control" ? height auto
   ".form-control" ? do
-    lineHeight $ rem 1.6
+    lineHeight $ em 2
     display block
     height $ px 34
     sym2 padding (px 6) (px 12)

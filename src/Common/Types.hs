@@ -18,7 +18,8 @@ instance ToJSON Article
 instance FromJSON Article
 
 data Topic = Topic
-  { topicTitle :: String
+  { topicId :: Maybe String
+  , topicTitle :: String
   , topicContent :: String
   , topicComments :: Maybe [Comment]
   } deriving (Eq, Show, Generic)
