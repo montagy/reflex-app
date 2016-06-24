@@ -24,19 +24,15 @@ page = do
   header
   divClass "container" $ do
     rec
-      {-dItem <- traceDyn "clicked" <$> holdDyn "" (show <$> eItemClick)-}
       eTopic' <- widgetHold (fakeGetData "inital") (fakeGetData . show <$> eItemClick)
-      {-fake <- fakeGetData "inital"-}
       let eTopic = switchPromptlyDyn eTopic'
---begin
-      {-eTopic <- fakeGetData "inital"-}
       eTopicList <- getTopicList
---data already
       divClass "topic_wrapper" $ topicView eTopic
       eItemClick <- divClass "xiaohua_wrapper raiuds" $ topicList eTopicList
     pure ()
   footer
 
+--TODO 防多次点击同一个的多次加载,为当前topic时点击不会加载
 topicList :: MonadWidget t m =>Event t [Topic] -> m (Event t Int)
 topicList eTs = do
   let
@@ -50,8 +46,9 @@ topicList eTs = do
   switchPromptlyDyn <$> mapDyn (leftmost . Map.elems) selectEntry
 
 initialTopic :: Topic
-initialTopic = Topic Nothing "init title" "init content" Nothing
+initialTopic = Topic Nothing "" "" Nothing
 
+--TODO initial topic 应该不显示,而是显示loading
 topicView :: MonadWidget t m => Event t Topic -> m ()
 topicView eTopic = do
   dTopic <- holdDyn initialTopic eTopic
