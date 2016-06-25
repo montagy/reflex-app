@@ -71,6 +71,11 @@ css = do
       {-div <? lineHeight (rem 2)-}
 
   selectedText
+  ".loading" ? do
+    position absolute
+    top $ px 50
+    width $ pct 100
+    textAlign (alignSide sideCenter)
   ".container" ? do
     sym2 margin nil auto
     width (pct 100)
