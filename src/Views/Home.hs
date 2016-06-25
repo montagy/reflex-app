@@ -24,8 +24,12 @@ page = do
   header
   divClass "container" $ do
     rec
+      attr <- holdDyn mempty $
+        (\b -> if b then mempty else  "style" =: "display:none") <$> leftmost [True <$ eItemClick, False <$ eTopic]
+      elDynAttr "div" attr $ text "loading"
       eTopic' <- widgetHold (fakeGetData "inital") (fakeGetData . show <$> eItemClick)
       let eTopic = switchPromptlyDyn eTopic'
+      --TODO 刷新按钮来获得随机或最新的topicList
       eTopicList <- getTopicList
       divClass "topic_wrapper" $ topicView eTopic
       eItemClick <- divClass "xiaohua_wrapper raiuds" $ topicList eTopicList
