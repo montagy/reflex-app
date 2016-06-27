@@ -84,7 +84,6 @@ commentEntry = divClass "comment__input clear" $ do
         eNewComment = attachDynWith (Comment Nothing) dSide eContent
 
     eComment <- switchPromptlyDyn <$> widgetHold (pure eNewComment) (postComment <$> eNewComment)
-
     drop <- dropdown Agree (constDyn selectList) $ def &
       attributes .~ constDyn ("class" =: "form-control")
     area <- textArea $ def & setValue .~ ("" <$ eSubmit) &
@@ -94,7 +93,7 @@ commentEntry = divClass "comment__input clear" $ do
       (e, _) <- elAttr' "button" (mconcat ["type" =: "button", "class" =: "form-control"]) $ text "Submit"
       pure $ domEvent Click e
   {-return eNewComment-}
-  pure eComment
+  pure (leftmost [eNewComment, eComment])
 
 commentsView :: MonadWidget t m =>Dynamic t (Maybe [Comment])-> m ()
 commentsView dmComments = do
