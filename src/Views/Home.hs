@@ -1,6 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecursiveDo #-}
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE LambdaCase #-}
@@ -14,10 +13,21 @@ import Control.Monad
 import Data.Monoid
 import Data.Map (Map)
 import qualified Data.Map as Map
+import Data.Time
 
-import qualified Data.Text as T
+import qualified Data.JSString as S
 import Common.Types
 import Api
+import Data.Bson (timestamp)
+
+--TODO 东八区时间
+z8Time :: FormatTime t => t -> String
+z8Time = formatTime defaultTimeLocale "%F %T %Z"
+
+nubEvent :: (MonadWidget t m, Eq a) => Event t a -> m (Event t a)
+nubEvent e = do
+  d <- holdDyn Nothing (Just <$> e)
+  return $ fmapMaybe id $ updated (nubDyn d)
 
 page :: MonadWidget t m => m ()
 page = do
@@ -28,8 +38,8 @@ page = do
         (\b -> if b then mempty else  "style" =: "display:none") <$> leftmost [True <$ eItemClick, False <$ eTopic]
       dAttr <- combineDyn (<>) (constDyn $ "class" =: "loading") attr
       elDynAttr "div" dAttr $ text "loading"
-      eTopic' <- widgetHold (fakeGetData "inital") (fakeGetData . show <$> eItemClick)
-      let eTopic = switchPromptlyDyn eTopic'
+      deTopic' <- widgetHold (fakeGetData "inital") (fakeGetData . show <$> eItemClick)
+      let eTopic = switchPromptlyDyn deTopic'
       --TODO 刷新按钮来获得随机或最新的topicList
       eTopicList <- getTopicList
       divClass "topic_wrapper" $ topicView eTopic
@@ -37,7 +47,6 @@ page = do
     pure ()
   footer
 
---TODO 防多次点击同一个的多次加载,为当前topic时点击不会加载
 topicList :: MonadWidget t m =>Event t [Topic] -> m (Event t Int)
 topicList eTs = do
   let
@@ -48,12 +57,12 @@ topicList eTs = do
 
   dTs <- holdDyn Map.empty $  Map.fromList . zip [1..] <$> eTs
   selectEntry <- listWithKey dTs view
-  switchPromptlyDyn <$> mapDyn (leftmost . Map.elems) selectEntry
+  eResult <- switchPromptlyDyn <$> mapDyn (leftmost . Map.elems) selectEntry
+  nubEvent eResult
 
 initialTopic :: Topic
 initialTopic = Topic Nothing "" "" Nothing
 
---TODO initial topic 应该不显示,而是显示loading
 topicView :: MonadWidget t m => Event t Topic -> m ()
 topicView eTopic = do
   dTopic <- holdDyn initialTopic eTopic
@@ -66,12 +75,15 @@ topicView eTopic = do
 
 commentEntry :: MonadWidget t m => m (Event t Comment)
 commentEntry = divClass "comment__input clear" $ do
+  let
+      selectList = Agree =: "agree" <> Against =: "against"
   rec
     let
         eContent = fmapMaybe maybeStrip $ tag (current $ _textArea_value area) eSubmit
         dSide = _dropdown_value drop
-        eNewComment = attachDynWith Comment dSide eContent
-        selectList = Agree =: "agree" <> Against =: "against"
+        eNewComment = attachDynWith (Comment Nothing) dSide eContent
+
+    eComment <- switchPromptlyDyn <$> widgetHold (pure eNewComment) (postComment <$> eNewComment)
 
     drop <- dropdown Agree (constDyn selectList) $ def &
       attributes .~ constDyn ("class" =: "form-control")
@@ -81,7 +93,8 @@ commentEntry = divClass "comment__input clear" $ do
     eSubmit <- do
       (e, _) <- elAttr' "button" (mconcat ["type" =: "button", "class" =: "form-control"]) $ text "Submit"
       pure $ domEvent Click e
-  return eNewComment
+  {-return eNewComment-}
+  pure eComment
 
 commentsView :: MonadWidget t m =>Dynamic t (Maybe [Comment])-> m ()
 commentsView dmComments = do
@@ -89,7 +102,14 @@ commentsView dmComments = do
     comment :: MonadWidget t m => Int -> Dynamic t Comment -> m ()
     comment _ c = do
       content <- mapDyn commentContent c
-      divClass "comment__item" $ dynText content
+      divClass "comment__item" $ do
+        dynText content
+        time <- forDyn c $ \c -> case commentId c of
+                                  Nothing -> "未提交状态"
+                                  Just oid -> "time:" ++ z8Time (timestamp oid)
+
+        dynText time
+
       pure ()
 
   dComments' <- forDyn dmComments $
@@ -109,7 +129,7 @@ commentsView dmComments = do
   pure ()
 
 stripString :: String -> String
-stripString  = T.unpack . T.strip . T.pack
+stripString  = S.unpack . S.strip . S.pack
 
 maybeStrip :: String -> Maybe String
 maybeStrip (stripString -> "") = Nothing

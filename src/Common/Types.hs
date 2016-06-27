@@ -3,29 +3,29 @@
 module Common.Types where
 
 import Data.Aeson
+import qualified Data.Aeson as A
 import GHC.Generics
-import Data.Text (Text)
+import Data.Text (unpack, pack)
 import Data.Time
+import Data.Bson
+import Control.Monad
 
-data Article = Article
-  { _id :: Maybe Text
-  , title :: Text
-  , content :: Text
-  , createTime :: Maybe UTCTime
-  } deriving  (Eq, Show, Generic)
-
-instance ToJSON Article
-instance FromJSON Article
+instance ToJSON ObjectId where
+  toJSON oid@(Oid x y) = A.String . pack $ show oid
+instance FromJSON ObjectId where
+  parseJSON oid@(A.String v) = return . read . unpack $ v
+  parseJSON _ = mzero
 
 data Topic = Topic
-  { topicId :: Maybe String
+  { topicId :: Maybe ObjectId
   , topicTitle :: String
   , topicContent :: String
   , topicComments :: Maybe [Comment]
   } deriving (Eq, Show, Generic)
 
 data Comment = Comment
-  { commentSide :: CommentSide
+  { commentId :: Maybe ObjectId
+  , commentSide :: CommentSide
   , commentContent :: String
   } deriving (Eq, Show, Generic)
 

@@ -42,6 +42,8 @@ library
                , mtl
                , transformers
                , ref-tf
+               , ghcjs-base
+               , bson
   ghc-prof-options: -fprof-auto
   ghc-options: -Wall -fwarn-tabs -funbox-strict-fields -O2
   default-language:    Haskell2010
@@ -55,4 +57,5 @@ executable blog
                      , blog
   default-language:    Haskell2010
   ghc-prof-options: -fprof-auto
-  ghc-options: -threaded -Wall -fwarn-tabs -funbox-strict-fields -O2
+  ghc-options: -threaded -Wall -fwarn-tabs -funbox-strict-fields -O2 
+  --cpp-options: -DGHCJS_BROWSER
