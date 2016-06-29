@@ -36,7 +36,7 @@ page = do
     rec
       attr <- holdDyn mempty $
         (\b -> if b then mempty else  "style" =: "display:none") <$> leftmost [True <$ eItemClick, False <$ eTopic]
-      dAttr <- combineDyn (<>) (constDyn $ "class" =: "loading") attr
+      dAttr <- mapDyn ("class" =: "loading" <>) attr
       elDynAttr "div" dAttr $ text "loading"
       deTopic' <- widgetHold (fakeGetData "inital") (fakeGetData . show <$> eItemClick)
       let eTopic = switchPromptlyDyn deTopic'
@@ -46,7 +46,7 @@ page = do
       eItemClick <- divClass "xiaohua_wrapper raiuds" $ topicList eTopicList
     pure ()
   footer
-
+--TODO return a selcted key Dynamic
 topicList :: MonadWidget t m =>Event t [Topic] -> m (Event t Int)
 topicList eTs = do
   let
@@ -70,11 +70,24 @@ topicView eTopic = do
     divClass "topic__title" $ dynText =<< mapDyn topicTitle dTopic
     divClass "topic__content" $ dynText =<< mapDyn topicContent dTopic
 
-  divClass "comment radius" (commentsView =<< mapDyn topicComments dTopic)
+  rec
+    divClass "comment radius" $ do
+      dTopicCmts <- mapDyn topicComments dTopic
+      let
+          fun :: Maybe [Comment] -> Maybe Comment -> Maybe [Comment]
+          fun Nothing Nothing = Nothing
+          fun Nothing (Just m) = Just [m]
+          fun mt Nothing = mt
+          fun (Just ts) (Just t) = Just (ts ++ [t])
+
+      dComts <- combineDyn fun dTopicCmts =<< holdDyn Nothing (Just <$> eEntryCmt)
+      commentsView dComts
+
+    eEntryCmt <- commentEntry
   pure ()
 
 commentEntry :: MonadWidget t m => m (Event t Comment)
-commentEntry = divClass "comment__input clear" $ do
+commentEntry = divClass "comment_input" $ do
   let
       selectList = Agree =: "agree" <> Against =: "against"
   rec
@@ -111,12 +124,11 @@ commentsView dmComments = do
 
       pure ()
 
-  dComments' <- forDyn dmComments $
+  dComments <- forDyn dmComments $
     \case
         Nothing -> Map.empty
         Just comments -> Map.fromList $ zip [1..] comments
   rec
-    dComments <- combineDyn (foldr insertNew_)  dComments' =<< foldDyn (:) [] eNewComment
     dAgreeComments <- mapDyn (Map.filter (\x -> commentSide x == Agree)) dComments
     dAgainstComments <- mapDyn (Map.filter (\x -> commentSide x == Against)) dComments
     _ <- divClass "comment__left" $
@@ -124,7 +136,6 @@ commentsView dmComments = do
     _ <-divClass "comment__right" $
       listWithKey dAgainstComments comment
 
-    eNewComment <- commentEntry
   pure ()
 
 stripString :: String -> String

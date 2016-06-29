@@ -131,9 +131,9 @@ css = do
     ".comment__right" ? do
       width $ pct 49
 
-    ".comment__input" ? do
-      width $ pct 100
-      marginTop $ px 20
+  ".comment_input" ? do
+    width $ pct 100
+    marginTop $ px 20
 
   ".radius" ? sym borderRadius (px 5)
   textarea # ".form-control" ? height auto
