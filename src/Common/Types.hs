@@ -25,6 +25,7 @@ data Topic = Topic
 
 data Comment = Comment
   { commentId :: Maybe ObjectId
+  , commentTopic :: String
   , commentSide :: CommentSide
   , commentContent :: String
   } deriving (Eq, Show, Generic)

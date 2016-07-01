@@ -30,7 +30,9 @@ topics = [Topic Nothing "t1" "content1" Nothing, Topic Nothing "t2" "content2" N
 fakeGetData :: MonadWidget t m => String -> m (Event t Topic)
 fakeGetData s = do
   let
-    comment = Just [Comment Nothing Agree "打一架", Comment Nothing Agree "说的好", Comment Nothing Against "放狗屁"]
+    comment = Just [Comment Nothing "Fake Title" Agree "打一架"
+      , Comment Nothing "Fake Title" Agree "说的好"
+      , Comment Nothing "Fake Title" Against "放狗屁"]
     art0 = Topic Nothing "Fake Title" "Fake content" comment
     art1 = topics !! 0
     art2 = topics !! 1

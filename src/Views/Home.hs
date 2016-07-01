@@ -9,11 +9,12 @@ module Views.Home (
 
 import Reflex
 import Reflex.Dom
-import Control.Monad
+{-import Control.Monad-}
 import Data.Monoid
-import Data.Map (Map)
+{-import Data.Map (Map)-}
 import qualified Data.Map as Map
 import Data.Time
+{-import Data.Maybe-}
 
 import qualified Data.JSString as S
 import Common.Types
@@ -83,19 +84,22 @@ topicView eTopic = do
       dComts <- combineDyn fun dTopicCmts =<< holdDyn Nothing (Just <$> eEntryCmt)
       commentsView dComts
 
-    eEntryCmt <- commentEntry
+    eEntryCmt <- commentEntry dTopic
   pure ()
 
-commentEntry :: MonadWidget t m => m (Event t Comment)
-commentEntry = divClass "comment_input" $ do
-  let
-      selectList = Agree =: "agree" <> Against =: "against"
+commentEntry :: MonadWidget t m => Dynamic t Topic ->  m (Event t Comment)
+commentEntry dTopic = divClass "comment_input" $ do
   rec
     let
+        selectList = Agree =: "agree" <> Against =: "against"
         eContent = fmapMaybe maybeStrip $ tag (current $ _textArea_value area) eSubmit
         dSide = _dropdown_value drop
-        eNewComment = attachDynWith (Comment Nothing) dSide eContent
+        --before post
+        eNewComment' = attachDynWith (Comment Nothing "") dSide eContent
+        eNewComment = attachDynWith (\topic c -> c{commentTopic = topicTitle topic}) dTopic eNewComment'
 
+
+    --after post
     eComment <- switchPromptlyDyn <$> widgetHold (pure eNewComment) (postComment <$> eNewComment)
     drop <- dropdown Agree (constDyn selectList) $ def &
       attributes .~ constDyn ("class" =: "form-control")
@@ -106,7 +110,7 @@ commentEntry = divClass "comment_input" $ do
       (e, _) <- elAttr' "button" (mconcat ["type" =: "button", "class" =: "form-control"]) $ text "Submit"
       pure $ domEvent Click e
   {-return eNewComment-}
-  pure (leftmost [eNewComment, eComment])
+  pure $ leftmost [eNewComment, eComment]
 
 commentsView :: MonadWidget t m =>Dynamic t (Maybe [Comment])-> m ()
 commentsView dmComments = do
@@ -116,7 +120,7 @@ commentsView dmComments = do
       content <- mapDyn commentContent c
       divClass "comment__item" $ do
         dynText content
-        time <- forDyn c $ \c -> case commentId c of
+        time <- forDyn c $ \cm -> case commentId cm of
                                   Nothing -> "未提交状态"
                                   Just oid -> "time:" ++ z8Time (timestamp oid)
 
@@ -145,10 +149,10 @@ maybeStrip :: String -> Maybe String
 maybeStrip (stripString -> "") = Nothing
 maybeStrip (stripString -> trimmed) = Just trimmed
 -- | Add a new value to a map; automatically choose an unused key
-insertNew_ :: (Enum k, Ord k) => v -> Map k v -> Map k v
-insertNew_ v m = case Map.maxViewWithKey m of
-  Nothing -> Map.singleton (toEnum 0) v
-  Just ((k, _), _) -> Map.insert (succ k) v m
+{-insertNew_ :: (Enum k, Ord k) => v -> Map k v -> Map k v-}
+{-insertNew_ v m = case Map.maxViewWithKey m of-}
+  {-Nothing -> Map.singleton (toEnum 0) v-}
+  {-Just ((k, _), _) -> Map.insert (succ k) v m-}
 
 footer :: MonadWidget t m => m ()
 footer = do
@@ -160,21 +164,21 @@ header = do
   el "header" navWidget
   pure ()
 
-loading :: MonadWidget t m => m ()
-loading = divClass "loading" $ text "loading..."
+{-loading :: MonadWidget t m => m ()-}
+{-loading = divClass "loading" $ text "loading..."-}
 
 navWidget :: MonadWidget t m => m ()
 navWidget =
   el "nav" $
     divClass "nav__content" $ text "吵架与看笑话"
 
-topicInput :: MonadWidget t m => m (Event t Topic)
-topicInput = do
-  rec
-      titleInput  <- textInput $ def & setValue .~ ("" <$ result)
-      contentInput <- textInput $ def & setValue .~ ("" <$ result)
-      submit <- button "Submit"
-      dTopic <- Topic `mapDyn` constDyn Nothing `apDyn` value titleInput `apDyn` value contentInput `apDyn` constDyn Nothing
-      let result = ffilter (\t -> (not . null . topicTitle) t && (not . null . topicContent) t ) $
-              attachWith const (current dTopic) submit
-  return result
+{-topicInput :: MonadWidget t m => m (Event t Topic)-}
+{-topicInput = do-}
+  {-rec-}
+      {-titleInput  <- textInput $ def & setValue .~ ("" <$ result)-}
+      {-contentInput <- textInput $ def & setValue .~ ("" <$ result)-}
+      {-submit <- button "Submit"-}
+      {-dTopic <- Topic `mapDyn` constDyn Nothing `apDyn` value titleInput `apDyn` value contentInput `apDyn` constDyn Nothing-}
+      {-let result = ffilter (\t -> (not . null . topicTitle) t && (not . null . topicContent) t ) $-}
+              {-attachWith const (current dTopic) submit-}
+  {-return result-}
