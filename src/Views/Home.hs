@@ -34,9 +34,9 @@ page = do
   header
   divClass "container" $ do
     rec
-      attr <- holdDyn mempty $
-        (\b -> if b then mempty else  "style" =: "display:none") <$> leftmost [True <$ eItemClick, False <$ eTopic]
-      dAttr <- mapDyn ("class" =: "loading" <>) attr
+      dAttr <- holdDyn mempty $
+        ("class" =: "loading" <>) . (\b -> if b then mempty else  "style" =: "display:none")
+          <$> leftmost [True <$ eItemClick, False <$ eTopic]
       elDynAttr "div" dAttr $ text "loading"
       deTopic' <- widgetHold (fakeGetData "inital") (fakeGetData . show <$> eItemClick)
       let eTopic = switchPromptlyDyn deTopic'
