@@ -70,18 +70,20 @@ topicView eTopic = do
   divClass "topic radius" $ do
     divClass "topic__title" $ dynText =<< mapDyn topicTitle dTopic
     divClass "topic__content" $ dynText =<< mapDyn topicContent dTopic
-
+--TODO重新设计
   rec
     divClass "comment radius" $ do
       dTopicCmts <- mapDyn topicComments dTopic
       let
-          fun :: Maybe [Comment] -> Maybe Comment -> Maybe [Comment]
-          fun Nothing Nothing = Nothing
-          fun Nothing (Just m) = Just [m]
-          fun mt Nothing = mt
-          fun (Just ts) (Just t) = Just (ts ++ [t])
+          fun :: Maybe [Comment] -> [Comment] -> Maybe [Comment]
+          fun mc c = mc <> Just c
+          eCmt = fmapMaybe id
+            (attachDynWith (\topic cmt -> if topicTitle topic == commentTopic cmt then Just cmt else Nothing) dTopic eEntryCmt)
 
-      dComts <- combineDyn fun dTopicCmts =<< holdDyn Nothing (Just <$> eEntryCmt)
+      dComts <- combineDyn fun dTopicCmts =<<
+        foldDyn (\cmt l -> l ++ [cmt]) [] eCmt
+        {-foldDyn (<>) Nothing-}
+            {-(attachDynWith (\topic cmt -> if topicTitle topic == commentTopic cmt then Just cmt else Nothing) dTopic eEntryCmt)-}
       commentsView dComts
 
     eEntryCmt <- commentEntry dTopic
@@ -124,6 +126,7 @@ commentsView dmComments = do
                                   Nothing -> "未提交状态"
                                   Just oid -> "time:" ++ z8Time (timestamp oid)
 
+        dynText =<< mapDyn commentTopic c
         dynText time
 
       pure ()
