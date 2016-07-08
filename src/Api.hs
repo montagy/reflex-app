@@ -8,8 +8,10 @@ module Api (
 import Common.Types
 import Reflex
 import Reflex.Dom
-import Data.Bson (genObjectId)
+import Data.Bson
 import Control.Monad.IO.Class
+import Data.Monoid
+import Data.String
 {-import Data.Time-}
 {-import Control.Monad.IO.Class (liftIO)-}
 
@@ -23,31 +25,24 @@ import Control.Monad.IO.Class
 
 {-getUsers :: XhrRequest-}
 {-getUsers = xhrRequest "GET" "http://localhost:3030/users" def-}
+host :: IsString a => a
+host = "http://localhost:3030/"
 
-topics :: [Topic]
-topics = [Topic Nothing "t1" "content1" Nothing, Topic Nothing "t2" "content2" Nothing]
-
-fakeGetData :: MonadWidget t m => String -> m (Event t Topic)
+fakeGetData :: MonadWidget t m => Maybe ObjectId -> m (Event t Topic)
 fakeGetData s = do
-  let
-    comment = Just [Comment Nothing "Fake Title" Agree "打一架"
-      , Comment Nothing "Fake Title" Agree "说的好"
-      , Comment Nothing "Fake Title" Against "放狗屁"]
-    art0 = Topic Nothing "Fake Title" "Fake content" comment
-    art1 = topics !! 0
-    art2 = topics !! 1
-    art  = case s of
-            "1" -> art1
-            "2" -> art2
-            _ -> art0
-
+  let req =
+        case s of
+            Nothing -> xhrRequest "GET" (host <> "topic/newest") def
+            Just id' -> xhrRequest "GET" (host <> "topic/" <> show id') def
   e <- getPostBuild
-  delay 1 (art <$ e)
+  fmapMaybe decodeXhrResponse <$> performRequestAsync (req <$ e)
 
 getTopicList :: MonadWidget t m => m (Event t [Topic])
 getTopicList = do
-  event <- delay 1 =<< getPostBuild
-  pure $ topics <$ event
+  let req = xhrRequest "GET" (host <> "topics") def
+  event <- getPostBuild
+  fmapMaybe decodeXhrResponse <$> performRequestAsync (req <$ event)
+
 
 postComment :: MonadWidget t m  => Comment -> m (Event t Comment)
 postComment c = do

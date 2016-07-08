@@ -14,6 +14,7 @@ import Data.Monoid
 {-import Data.Map (Map)-}
 import qualified Data.Map as Map
 import Data.Time
+import qualified Data.Text as T
 {-import Data.Maybe-}
 
 import qualified Data.JSString as S
@@ -21,7 +22,7 @@ import Common.Types
 import Api
 import Data.Bson (timestamp)
 
---TODO 东八区时间
+--TODO 本地时间
 z8Time :: FormatTime t => t -> String
 z8Time = formatTime defaultTimeLocale "%F %T %Z"
 
@@ -39,7 +40,7 @@ page = do
         ("class" =: "loading" <>) . (\b -> if b then mempty else  "style" =: "display:none")
           <$> leftmost [True <$ eItemClick, False <$ eTopic]
       elDynAttr "div" dAttr $ text "loading"
-      deTopic' <- widgetHold (fakeGetData "inital") (fakeGetData . show <$> eItemClick)
+      deTopic' <- widgetHold (fakeGetData Nothing) (fakeGetData . Just . show <$> eItemClick)
       let eTopic = switchPromptlyDyn deTopic'
       --TODO 刷新按钮来获得随机或最新的topicList
       eTopicList <- getTopicList
@@ -62,7 +63,7 @@ topicList eTs = do
   nubEvent eResult
 
 initialTopic :: Topic
-initialTopic = Topic Nothing "" "" Nothing
+initialTopic = Topic Nothing "" "" []
 
 topicView :: MonadWidget t m => Event t Topic -> m ()
 topicView eTopic = do
@@ -74,19 +75,22 @@ topicView eTopic = do
   rec
     divClass "comment radius" $ do
       dTopicCmts <- mapDyn topicComments dTopic
-      let
-          fun :: Maybe [Comment] -> [Comment] -> Maybe [Comment]
-          fun mc c = mc <> Just c
-          eCmt = fmapMaybe id
-            (attachDynWith (\topic cmt -> if topicTitle topic == commentTopic cmt then Just cmt else Nothing) dTopic eEntryCmt)
+      commentsView dTopicCmts
+      {-let-}
+          {-fun :: Maybe [Comment] -> [Comment] -> Maybe [Comment]-}
+          {-fun mc c = mc <> Just c-}
+          {-eCmt = fmapMaybe id-}
+            {-(attachDynWith (\topic cmt -> if topicTitle topic == commentTopic cmt then Just cmt else Nothing) dTopic eEntryCmt)-}
 
-      dComts <- combineDyn fun dTopicCmts =<<
-        foldDyn (\cmt l -> l ++ [cmt]) [] eCmt
+      {-
+       -dComts <- combineDyn fun dTopicCmts =<<
+       -  foldDyn (\cmt l -> l ++ [cmt]) [] eCmt
+       -}
         {-foldDyn (<>) Nothing-}
             {-(attachDynWith (\topic cmt -> if topicTitle topic == commentTopic cmt then Just cmt else Nothing) dTopic eEntryCmt)-}
-      commentsView dComts
+      {-commentsView dComts-}
 
-    eEntryCmt <- commentEntry dTopic
+    {-eEntryCmt <- commentEntry dTopic-}
   pure ()
 
 commentEntry :: MonadWidget t m => Dynamic t Topic ->  m (Event t Comment)
@@ -98,7 +102,7 @@ commentEntry dTopic = divClass "comment_input" $ do
         dSide = _dropdown_value drop
         --before post
         eNewComment' = attachDynWith (Comment Nothing "") dSide eContent
-        eNewComment = attachDynWith (\topic c -> c{commentTopic = topicTitle topic}) dTopic eNewComment'
+        eNewComment = attachDynWith (\topic c -> c{commentTopicId = topicId topic}) dTopic eNewComment'
 
 
     --after post
@@ -119,14 +123,14 @@ commentsView dmComments = do
   let
     comment :: MonadWidget t m => Int -> Dynamic t Comment -> m ()
     comment _ c = do
-      content <- mapDyn commentContent c
+      content <- mapDyn (T.unpack . commentContent) c
       divClass "comment__item" $ do
         dynText content
         time <- forDyn c $ \cm -> case commentId cm of
                                   Nothing -> "未提交状态"
                                   Just oid -> "time:" ++ z8Time (timestamp oid)
 
-        dynText =<< mapDyn commentTopic c
+        dynText =<< mapDyn (show . commentTopicId) c
         dynText time
 
       pure ()

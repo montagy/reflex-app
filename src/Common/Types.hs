@@ -5,7 +5,7 @@ module Common.Types where
 import Data.Aeson
 import qualified Data.Aeson as A
 import GHC.Generics
-import Data.Text (unpack, pack)
+import Data.Text (Text, unpack, pack)
 import Data.Time
 import Data.Bson
 import Control.Monad
@@ -18,16 +18,16 @@ instance FromJSON ObjectId where
 
 data Topic = Topic
   { topicId :: Maybe ObjectId
-  , topicTitle :: String
-  , topicContent :: String
-  , topicComments :: Maybe [Comment]
+  , topicTitle :: Text
+  , topicContent :: Text
+  , topicComments :: [Comment]
   } deriving (Eq, Show, Generic)
 
 data Comment = Comment
   { commentId :: Maybe ObjectId
-  , commentTopic :: String
+  , commentTopicId :: ObjectId
   , commentSide :: CommentSide
-  , commentContent :: String
+  , commentContent :: Text
   } deriving (Eq, Show, Generic)
 
 data CommentSide = Agree | Against deriving (Enum, Ord, Eq, Show, Generic, Read)
