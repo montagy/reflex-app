@@ -5,7 +5,6 @@ import Common.Types
 import Reflex
 import Reflex.Dom
 import Data.Bson
-import Control.Monad.IO.Class
 import Data.Monoid
 import Data.String
 import Data.Aeson (FromJSON)
@@ -49,11 +48,16 @@ getTopicList = do
   event <- getPostBuild
   fetchByEvent (req <$ event)
 
-
 postComment :: MonadWidget t m  => Comment -> m (Event t [Comment])
 postComment c = do
   let req = postJson (host <> "comment") c
 
   e <- getPostBuild
   fetchByEvent (req <$ e)
+
+postComment'  :: MonadWidget t m => Event t Comment -> m (Event t [Comment])
+postComment'  e = do
+  let req  = postJson (host <> "comment")
+
+  fetchByEvent (req <$> e)
 

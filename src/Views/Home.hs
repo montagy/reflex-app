@@ -99,7 +99,9 @@ commentEntry dTopic = divClass "comment_input" $ do
     dContent <- holdDyn "" eContent
     dNewComment <- newComment `mapDyn` dTopic `apDyn` dSide `apDyn` dContent
     let eNewComment = fmapMaybe id $ tagDyn dNewComment eSubmit
-    eComment <- switchPromptlyDyn <$> widgetHold (pure never) (postComment <$> eNewComment)
+    --eComment <- switchPromptlyDyn <$> widgetHold (pure never) (postComment <$> eNewComment)
+    eComment <- postComment' eNewComment
+
     --after post
     --dComment <- dyn =<< mapDyn postComment dNewComment
     --eComment <- switchPromptly never dComment
