@@ -40,16 +40,15 @@ page = do
       dAttr <- holdDyn mempty $
         ("class" =: "loading" <>) . (\b -> if b then mempty else  "style" =: "display:none")
           <$> leftmost [True <$ eItemClick, False <$ eTopic]
-      elDynAttr "div" dAttr $ text "loading"
+      loading dAttr
       eTopic' <- fakeGetData Nothing
       eTopic'' <- fetchTopic eItemClick
       let eTopic = leftmost [eTopic', eTopic'']
       --TODO 刷新按钮来获得随机或最新的topicList
       eTopicList <- getTopicList
       divClass "topic_wrapper" $ topicView eTopic
-      eItemClick <- divClass "xiaohua_wrapper raiuds" $ do
-        ee <- widgetHold (pure never) (topicList' <$> eTopicList)
-        pure $ switchPromptlyDyn ee
+      eItemClick <- divClass "xiaohua_wrapper raiuds" $
+        switchPromptlyDyn <$>  widgetHold (pure never) (topicList' <$> eTopicList)
     pure ()
   footer
 
@@ -64,21 +63,6 @@ topicList' ts = do
   es <- mapM view ts
   nubEvent (leftmost es)
 
-
---TODO return a selcted key Dynamic
-topicList :: MonadWidget t m =>Event t [Topic] -> m (Event t (Maybe ObjectId))
-topicList eTs = do
-  let
-      view :: (MonadWidget t m ) => Int -> Dynamic t Topic -> m (Event t (Maybe ObjectId))
-      view _ dT = do
-        (dom, _) <- elAttr' "div" ("class" =: "xiaohua") $ dynText =<< mapDyn (T.unpack . topicTitle) dT
-        pure $ attachDynWith (\d _ -> topicId d) dT (domEvent Click dom)
-
-  dTs <- holdDyn Map.empty $  Map.fromList . zip [1..] <$> eTs
-  selectEntry <- listWithKey dTs view
-  eResult <- switchPromptlyDyn <$> mapDyn (leftmost . Map.elems) selectEntry
-  nubEvent eResult
-
 initialTopic :: Topic
 initialTopic = Topic Nothing "" "" []
 
@@ -88,26 +72,13 @@ topicView eTopic = do
   divClass "topic radius" $ do
     divClass "topic__title" $ dynText =<< mapDyn (T.unpack . topicTitle) dTopic
     divClass "topic__content" $ dynText =<< mapDyn (T.unpack . topicContent) dTopic
---TODO重新设计
-  rec
-    divClass "comment radius" $ do
-      dTopicCmts <- mapDyn topicComments dTopic
-      commentsView dTopicCmts
-      {-let-}
-          {-fun :: Maybe [Comment] -> [Comment] -> Maybe [Comment]-}
-          {-fun mc c = mc <> Just c-}
-          {-eCmt = fmapMaybe id-}
-            {-(attachDynWith (\topic cmt -> if topicTitle topic == commentTopic cmt then Just cmt else Nothing) dTopic eEntryCmt)-}
+  divClass "comment radius" $ do
+    rec
+      dCmts <- holdDyn [] $ leftmost [topicComments <$> eTopic, eCmts]
+      commentsView dCmts
 
-      {-
-       -dComts <- combineDyn fun dTopicCmts =<<
-       -  foldDyn (\cmt l -> l ++ [cmt]) [] eCmt
-       -}
-        {-foldDyn (<>) Nothing-}
-            {-(attachDynWith (\topic cmt -> if topicTitle topic == commentTopic cmt then Just cmt else Nothing) dTopic eEntryCmt)-}
-      {-commentsView dComts-}
-
-    eEntryCmt <- commentEntry dTopic
+      eCmts <- commentEntry dTopic
+    pure ()
   pure ()
 
 -- not load comment entry when topic is initialTopic
@@ -159,8 +130,6 @@ commentsView dComments = do
         _ <- el "p" $ dynText time
         pure ()
 
-      pure ()
-
   dComments' <- mapDyn (Map.fromList . zip [1..]) dComments
   rec
     dAgreeComments <- mapDyn (Map.filter (\x -> commentSide x == Agree)) dComments'
@@ -194,8 +163,8 @@ header = do
   el "header" navWidget
   pure ()
 
-{-loading :: MonadWidget t m => m ()-}
-{-loading = divClass "loading" $ text "loading..."-}
+loading :: MonadWidget t m => Dynamic t (Map String String) -> m ()
+loading dAttr = elDynAttr "div" dAttr $ text "loading..."
 
 navWidget :: MonadWidget t m => m ()
 navWidget =
@@ -212,3 +181,18 @@ navWidget =
       {-let result = ffilter (\t -> (not . null . topicTitle) t && (not . null . topicContent) t ) $-}
               {-attachWith const (current dTopic) submit-}
   {-return result-}
+--TODO return a selcted key Dynamic
+{-
+ -topicList :: MonadWidget t m =>Event t [Topic] -> m (Event t (Maybe ObjectId))
+ -topicList eTs = do
+ -  let
+ -      view :: (MonadWidget t m ) => Int -> Dynamic t Topic -> m (Event t (Maybe ObjectId))
+ -      view _ dT = do
+ -        (dom, _) <- elAttr' "div" ("class" =: "xiaohua") $ dynText =<< mapDyn (T.unpack . topicTitle) dT
+ -        pure $ attachDynWith (\d _ -> topicId d) dT (domEvent Click dom)
+ -
+ -  dTs <- holdDyn Map.empty $  Map.fromList . zip [1..] <$> eTs
+ -  selectEntry <- listWithKey dTs view
+ -  eResult <- switchPromptlyDyn <$> mapDyn (leftmost . Map.elems) selectEntry
+ -  nubEvent eResult
+ -}
