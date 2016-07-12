@@ -1,9 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Api (
-  fakeGetData,
-  getTopicList,
-  postComment
-) where
+module Api where
 
 import Common.Types
 import Reflex
@@ -12,6 +8,7 @@ import Data.Bson
 import Control.Monad.IO.Class
 import Data.Monoid
 import Data.String
+import Data.Aeson (FromJSON)
 {-import Data.Time-}
 {-import Control.Monad.IO.Class (liftIO)-}
 
@@ -28,6 +25,15 @@ import Data.String
 host :: IsString a => a
 host = "http://localhost:3030/"
 
+fetchByEvent :: (MonadWidget t m, FromJSON b) => Event t XhrRequest -> m (Event t b)
+fetchByEvent e =
+  fmapMaybe decodeXhrResponse <$> performRequestAsync e
+
+fetchTopic :: (MonadWidget t m) => Event t ObjectId -> m (Event t Topic)
+fetchTopic e = do
+  let req id' = xhrRequest "GET" (host <> "topic/" <> show id') def
+
+  fetchByEvent $ req <$> e
 fakeGetData :: MonadWidget t m => Maybe ObjectId -> m (Event t Topic)
 fakeGetData s = do
   let req =
@@ -35,18 +41,19 @@ fakeGetData s = do
             Nothing -> xhrRequest "GET" (host <> "topic/newest") def
             Just id' -> xhrRequest "GET" (host <> "topic/" <> show id') def
   e <- getPostBuild
-  fmapMaybe decodeXhrResponse <$> performRequestAsync (req <$ e)
+  fetchByEvent (req <$ e)
 
 getTopicList :: MonadWidget t m => m (Event t [Topic])
 getTopicList = do
   let req = xhrRequest "GET" (host <> "topics") def
   event <- getPostBuild
-  fmapMaybe decodeXhrResponse <$> performRequestAsync (req <$ event)
+  fetchByEvent (req <$ event)
 
 
-postComment :: MonadWidget t m  => Comment -> m (Event t Comment)
+postComment :: MonadWidget t m  => Comment -> m (Event t [Comment])
 postComment c = do
-  oid <- liftIO genObjectId
-  e <- delay 1 =<< getPostBuild
-  pure $ c{commentId = Just oid} <$ e
+  let req = postJson (host <> "comment") c
+
+  e <- getPostBuild
+  fetchByEvent (req <$ e)
 

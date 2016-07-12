@@ -46,6 +46,7 @@ css = do
     fontSize $ px 14
     lineHeight $ em 1.4285
     paddingTop $ px (headerHeight + headerBottom)
+    paddingBottom $ px footerHeight
     header ? do
       width (pct 100)
       position fixed

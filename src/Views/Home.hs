@@ -9,22 +9,23 @@ module Views.Home (
 
 import Reflex
 import Reflex.Dom
-{-import Control.Monad-}
+import Control.Monad
+import Control.Monad.IO.Class (liftIO)
 import Data.Monoid
-{-import Data.Map (Map)-}
+import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.Time
 import qualified Data.Text as T
-{-import Data.Maybe-}
+import Data.Text (Text)
+import Data.Maybe
 
-import qualified Data.JSString as S
 import Common.Types
 import Api
-import Data.Bson (timestamp)
+import Data.Bson (timestamp, ObjectId)
 
---TODO 本地时间
+--本地时间
 z8Time :: FormatTime t => t -> String
-z8Time = formatTime defaultTimeLocale "%F %T %Z"
+z8Time = formatTime defaultTimeLocale "%F %T"
 
 nubEvent :: (MonadWidget t m, Eq a) => Event t a -> m (Event t a)
 nubEvent e = do
@@ -40,22 +41,38 @@ page = do
         ("class" =: "loading" <>) . (\b -> if b then mempty else  "style" =: "display:none")
           <$> leftmost [True <$ eItemClick, False <$ eTopic]
       elDynAttr "div" dAttr $ text "loading"
-      deTopic' <- widgetHold (fakeGetData Nothing) (fakeGetData . Just . show <$> eItemClick)
-      let eTopic = switchPromptlyDyn deTopic'
+      eTopic' <- fakeGetData Nothing
+      eTopic'' <- fetchTopic eItemClick
+      let eTopic = leftmost [eTopic', eTopic'']
       --TODO 刷新按钮来获得随机或最新的topicList
       eTopicList <- getTopicList
       divClass "topic_wrapper" $ topicView eTopic
-      eItemClick <- divClass "xiaohua_wrapper raiuds" $ topicList eTopicList
+      eItemClick <- divClass "xiaohua_wrapper raiuds" $ do
+        ee <- widgetHold (pure never) (topicList' <$> eTopicList)
+        pure $ switchPromptlyDyn ee
     pure ()
   footer
+
+topicList' :: MonadWidget t m => [Topic] -> m (Event t ObjectId)
+topicList' ts = do
+  let
+      view :: (MonadWidget t m) => Topic -> m (Event t ObjectId)
+      view t = do
+        (dom, _) <- elAttr' "div" ("class" =: "xiaohua") $ text (T.unpack $ topicTitle t)
+        pure $ fmapMaybe id $ topicId t <$ domEvent Click dom
+
+  es <- mapM view ts
+  nubEvent (leftmost es)
+
+
 --TODO return a selcted key Dynamic
-topicList :: MonadWidget t m =>Event t [Topic] -> m (Event t Int)
+topicList :: MonadWidget t m =>Event t [Topic] -> m (Event t (Maybe ObjectId))
 topicList eTs = do
   let
-      view :: (MonadWidget t m ) => Int -> Dynamic t Topic -> m (Event t Int)
-      view k dT = do
-        (dom, _) <- elAttr' "div" ("class" =: "xiaohua") $ dynText =<< mapDyn topicTitle dT
-        pure $ k <$ domEvent Click dom
+      view :: (MonadWidget t m ) => Int -> Dynamic t Topic -> m (Event t (Maybe ObjectId))
+      view _ dT = do
+        (dom, _) <- elAttr' "div" ("class" =: "xiaohua") $ dynText =<< mapDyn (T.unpack . topicTitle) dT
+        pure $ attachDynWith (\d _ -> topicId d) dT (domEvent Click dom)
 
   dTs <- holdDyn Map.empty $  Map.fromList . zip [1..] <$> eTs
   selectEntry <- listWithKey dTs view
@@ -69,8 +86,8 @@ topicView :: MonadWidget t m => Event t Topic -> m ()
 topicView eTopic = do
   dTopic <- holdDyn initialTopic eTopic
   divClass "topic radius" $ do
-    divClass "topic__title" $ dynText =<< mapDyn topicTitle dTopic
-    divClass "topic__content" $ dynText =<< mapDyn topicContent dTopic
+    divClass "topic__title" $ dynText =<< mapDyn (T.unpack . topicTitle) dTopic
+    divClass "topic__content" $ dynText =<< mapDyn (T.unpack . topicContent) dTopic
 --TODO重新设计
   rec
     divClass "comment radius" $ do
@@ -90,23 +107,31 @@ topicView eTopic = do
             {-(attachDynWith (\topic cmt -> if topicTitle topic == commentTopic cmt then Just cmt else Nothing) dTopic eEntryCmt)-}
       {-commentsView dComts-}
 
-    {-eEntryCmt <- commentEntry dTopic-}
+    eEntryCmt <- commentEntry dTopic
   pure ()
 
-commentEntry :: MonadWidget t m => Dynamic t Topic ->  m (Event t Comment)
+-- not load comment entry when topic is initialTopic
+commentEntry :: MonadWidget t m => Dynamic t Topic ->  m (Event t [Comment])
 commentEntry dTopic = divClass "comment_input" $ do
   rec
     let
+        newComment :: Topic -> CommentSide -> Text -> Maybe Comment
+        newComment t s c =
+          case topicId t of
+            Nothing -> Nothing
+            Just id' -> Just $ Comment Nothing id' s c
         selectList = Agree =: "agree" <> Against =: "against"
         eContent = fmapMaybe maybeStrip $ tag (current $ _textArea_value area) eSubmit
         dSide = _dropdown_value drop
+
         --before post
-        eNewComment' = attachDynWith (Comment Nothing "") dSide eContent
-        eNewComment = attachDynWith (\topic c -> c{commentTopicId = topicId topic}) dTopic eNewComment'
-
-
+    dContent <- holdDyn "" eContent
+    dNewComment <- newComment `mapDyn` dTopic `apDyn` dSide `apDyn` dContent
+    let eNewComment = fmapMaybe id $ tagDyn dNewComment eSubmit
+    eComment <- switchPromptlyDyn <$> widgetHold (pure never) (postComment <$> eNewComment)
     --after post
-    eComment <- switchPromptlyDyn <$> widgetHold (pure eNewComment) (postComment <$> eNewComment)
+    --dComment <- dyn =<< mapDyn postComment dNewComment
+    --eComment <- switchPromptly never dComment
     drop <- dropdown Agree (constDyn selectList) $ def &
       attributes .~ constDyn ("class" =: "form-control")
     area <- textArea $ def & setValue .~ ("" <$ eSubmit) &
@@ -115,33 +140,31 @@ commentEntry dTopic = divClass "comment_input" $ do
     eSubmit <- do
       (e, _) <- elAttr' "button" (mconcat ["type" =: "button", "class" =: "form-control"]) $ text "Submit"
       pure $ domEvent Click e
-  {-return eNewComment-}
-  pure $ leftmost [eNewComment, eComment]
 
-commentsView :: MonadWidget t m =>Dynamic t (Maybe [Comment])-> m ()
-commentsView dmComments = do
+  return eComment
+
+commentsView :: MonadWidget t m =>Dynamic t [Comment]-> m ()
+commentsView dComments = do
   let
     comment :: MonadWidget t m => Int -> Dynamic t Comment -> m ()
     comment _ c = do
       content <- mapDyn (T.unpack . commentContent) c
       divClass "comment__item" $ do
-        dynText content
+        _ <- el "p" $ dynText content
+        zone <- liftIO getCurrentTimeZone
         time <- forDyn c $ \cm -> case commentId cm of
                                   Nothing -> "未提交状态"
-                                  Just oid -> "time:" ++ z8Time (timestamp oid)
+                                  Just oid -> "time:" ++ z8Time (utcToZonedTime zone $ timestamp oid)
 
-        dynText =<< mapDyn (show . commentTopicId) c
-        dynText time
+        _ <- el "p" $ dynText time
+        pure ()
 
       pure ()
 
-  dComments <- forDyn dmComments $
-    \case
-        Nothing -> Map.empty
-        Just comments -> Map.fromList $ zip [1..] comments
+  dComments' <- mapDyn (Map.fromList . zip [1..]) dComments
   rec
-    dAgreeComments <- mapDyn (Map.filter (\x -> commentSide x == Agree)) dComments
-    dAgainstComments <- mapDyn (Map.filter (\x -> commentSide x == Against)) dComments
+    dAgreeComments <- mapDyn (Map.filter (\x -> commentSide x == Agree)) dComments'
+    dAgainstComments <- mapDyn (Map.filter (\x -> commentSide x == Against)) dComments'
     _ <- divClass "comment__left" $
       listWithKey dAgreeComments comment
     _ <-divClass "comment__right" $
@@ -149,10 +172,10 @@ commentsView dmComments = do
 
   pure ()
 
-stripString :: String -> String
-stripString  = S.unpack . S.strip . S.pack
+stripString :: String -> Text
+stripString  = T.strip . T.pack
 
-maybeStrip :: String -> Maybe String
+maybeStrip :: String -> Maybe Text
 maybeStrip (stripString -> "") = Nothing
 maybeStrip (stripString -> trimmed) = Just trimmed
 -- | Add a new value to a map; automatically choose an unused key
