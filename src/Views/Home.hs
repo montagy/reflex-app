@@ -43,14 +43,16 @@ page = do
       loading dAttr
       eTopic' <- fakeGetData Nothing
       eTopic'' <- fetchTopic eItemClick
-      let eTopic = leftmost [eTopic', eTopic'']
+      let eTopic = leftmost [eTopic', eTopic'', eNewTopic]
       --TODO 刷新按钮来获得随机或最新的topicList
-      eTopicList <- getTopicList
+      eTopicList' <- getTopicList
+      eTopicList'' <- fetchTopicList eNewTopic
+      let eTopicList = leftmost [eTopicList', eTopicList'']
       divClass "topic_wrapper" $ topicView eTopic
-      eItemClick <- divClass "xiaohua_wrapper raiuds" $ do
-        eObj <- switchPromptlyDyn <$>  widgetHold (pure never) (topicList' <$> eTopicList)
-        _ <- divClass "topic__form" $ el "form" topicInput
-        pure eObj
+      (eItemClick, eNewTopic) <- divClass "xiaohua_wrapper raiuds" $ do
+        eObj <- divClass "topic__list" $ switchPromptlyDyn <$>  widgetHold (pure never) (topicList' <$> eTopicList)
+        eNewTopic' <- divClass "topic__form" $ el "form" topicInput
+        pure (eObj, eNewTopic')
     pure ()
   footer
 
@@ -122,18 +124,16 @@ commentEntry dTopic = divClass "comment_input" $ do
                           Nothing -> Nothing
                           Just c' -> Just $ Comment Nothing id' s c'
         selectList = Agree =: "agree" <> Against =: "against"
-        dContent = value area
-        dSide = value drop
 
-    dNewComment <- newComment `mapDyn` dTopic `apDyn` dSide `apDyn` dContent
-    let eNewComment = fmapMaybe id $ tag (current dNewComment) eSubmit
+    dNewComment <- newComment `mapDyn` dTopic `apDyn` value drop `apDyn` value area
+    let eNewComment = fmapMaybe id $ tag (current dNewComment) submit
     eComment <- postComment' eNewComment
 
     drop <- dropdown Agree (constDyn selectList) $ def &
       attributes .~ constDyn ("class" =: "form-control")
-    area <- textArea $ def & setValue .~ ("" <$ eSubmit) &
+    area <- textArea $ def & setValue .~ ("" <$ submit) &
       attributes .~ constDyn (mconcat ["class" =: "form-control", "row" =: "3"])
-    eSubmit <- do
+    submit <- do
       (e, _) <- elAttr' "button" (mconcat ["type" =: "button", "class" =: "form-control"]) $ text "Submit"
       pure $ domEvent Click e
 

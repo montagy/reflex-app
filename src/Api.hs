@@ -48,6 +48,11 @@ getTopicList = do
   event <- getPostBuild
   fetchByEvent (req <$ event)
 
+fetchTopicList :: MonadWidget t m => Event t a -> m (Event t [Topic])
+fetchTopicList e = do
+  let req = xhrRequest "GET" (host <> "topics") def
+  fetchByEvent (req <$ e)
+
 postComment :: MonadWidget t m  => Comment -> m (Event t [Comment])
 postComment c = do
   let req = postJson (host <> "comment") c
