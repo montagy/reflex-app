@@ -64,17 +64,17 @@ topicInput = do
       & attributes .~ constDyn ("placeholder" =: "input content")
 
     submit <- button "Submit"
-    let
-        bTitle = current $ value title
-        bContent = current $ value content
-        f :: String -> String -> Topic
-        f c t = Topic Nothing (T.pack t ) (T.pack c) []
-        g :: Topic -> Bool
-        g Topic{..} =
-          let notnull = not . T.null
-           in
-          notnull topicTitle && notnull topicContent
-        eSubmitTopic = ffilter g $ attachWith f bContent (tag bTitle submit)
+  let
+      bTitle = current $ value title
+      bContent = current $ value content
+      f :: String -> String -> Topic
+      f c t = Topic Nothing (T.pack t ) (T.pack c) []
+      g :: Topic -> Bool
+      g Topic{..} =
+        let notnull = not . T.null
+          in
+        notnull topicTitle && notnull topicContent
+      eSubmitTopic = ffilter g $ attachWith f bContent (tag bTitle submit)
 
   postTopic eSubmitTopic
 
@@ -120,8 +120,8 @@ commentEntry dTopic = divClass "comment_input" $ do
             Nothing -> Nothing
             Just id' -> Just $ Comment Nothing id' s c
         selectList = Agree =: "agree" <> Against =: "against"
-        eContent = fmapMaybe maybeStrip $ tag (current $ _textArea_value area) eSubmit
-        dSide = _dropdown_value drop
+        eContent = fmapMaybe maybeStrip $ tag (current $ value area) eSubmit
+        dSide = value drop
 
     dContent <- holdDyn "" eContent
     dNewComment <- newComment `mapDyn` dTopic `apDyn` dSide `apDyn` dContent
@@ -194,28 +194,3 @@ navWidget :: MonadWidget t m => m ()
 navWidget =
   el "nav" $
     divClass "nav__content" $ text "吵架与看笑话"
-
-{-topicInput :: MonadWidget t m => m (Event t Topic)-}
-{-topicInput = do-}
-  {-rec-}
-      {-titleInput  <- textInput $ def & setValue .~ ("" <$ result)-}
-      {-contentInput <- textInput $ def & setValue .~ ("" <$ result)-}
-      {-submit <- button "Submit"-}
-      {-dTopic <- Topic `mapDyn` constDyn Nothing `apDyn` value titleInput `apDyn` value contentInput `apDyn` constDyn Nothing-}
-      {-let result = ffilter (\t -> (not . null . topicTitle) t && (not . null . topicContent) t ) $-}
-              {-attachWith const (current dTopic) submit-}
-  {-return result-}
-{-
- -topicList :: MonadWidget t m =>Event t [Topic] -> m (Event t (Maybe ObjectId))
- -topicList eTs = do
- -  let
- -      view :: (MonadWidget t m ) => Int -> Dynamic t Topic -> m (Event t (Maybe ObjectId))
- -      view _ dT = do
- -        (dom, _) <- elAttr' "div" ("class" =: "xiaohua") $ dynText =<< mapDyn (T.unpack . topicTitle) dT
- -        pure $ attachDynWith (\d _ -> topicId d) dT (domEvent Click dom)
- -
- -  dTs <- holdDyn Map.empty $  Map.fromList . zip [1..] <$> eTs
- -  selectEntry <- listWithKey dTs view
- -  eResult <- switchPromptlyDyn <$> mapDyn (leftmost . Map.elems) selectEntry
- -  nubEvent eResult
- -}
