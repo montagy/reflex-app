@@ -61,3 +61,8 @@ postComment'  e = do
 
   fetchByEvent (req <$> e)
 
+postTopic :: MonadWidget t m => Event t Topic -> m (Event t Topic)
+postTopic e = do
+  let req = postJson (host <> "topic")
+
+  fetchByEvent (req <$> e)

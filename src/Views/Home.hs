@@ -3,6 +3,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE RecordWildCards #-}
 module Views.Home (
   page
 ) where
@@ -23,9 +24,8 @@ import Common.Types
 import Api
 import Data.Bson (timestamp, ObjectId)
 
---本地时间
-z8Time :: FormatTime t => t -> String
-z8Time = formatTime defaultTimeLocale "%F %T"
+prettyTime :: FormatTime t => t -> String
+prettyTime = formatTime defaultTimeLocale "%F %T"
 
 nubEvent :: (MonadWidget t m, Eq a) => Event t a -> m (Event t a)
 nubEvent e = do
@@ -47,11 +47,39 @@ page = do
       --TODO 刷新按钮来获得随机或最新的topicList
       eTopicList <- getTopicList
       divClass "topic_wrapper" $ topicView eTopic
-      eItemClick <- divClass "xiaohua_wrapper raiuds" $
-        switchPromptlyDyn <$>  widgetHold (pure never) (topicList' <$> eTopicList)
+      eItemClick <- divClass "xiaohua_wrapper raiuds" $ do
+        eObj <- switchPromptlyDyn <$>  widgetHold (pure never) (topicList' <$> eTopicList)
+        _ <- topicInput
+        pure eObj
     pure ()
   footer
 
+topicInput :: MonadWidget t m => m (Event t Topic)
+topicInput = do
+  rec
+    title <- textInput $ def & setValue .~ ("" <$ submit)
+      & attributes .~ constDyn ("placeholder" =: "input a title")
+
+    content <- textArea $ def & setValue .~ ("" <$ submit)
+      & attributes .~ constDyn ("placeholder" =: "input content")
+
+    submit <- button "Submit"
+    let
+        bTitle = current $ value title
+        bContent = current $ value content
+        f :: String -> String -> Topic
+        f c t = Topic Nothing (T.pack t ) (T.pack c) []
+        g :: Topic -> Bool
+        g Topic{..} =
+          let notnull = not . T.null
+           in
+          notnull topicTitle && notnull topicContent
+        eSubmitTopic = ffilter g $ attachWith f bContent (tag bTitle submit)
+
+  postTopic eSubmitTopic
+
+
+--TODO return a selcted key Dynamic
 topicList' :: MonadWidget t m => [Topic] -> m (Event t ObjectId)
 topicList' ts = do
   let
@@ -81,7 +109,7 @@ topicView eTopic = do
     pure ()
   pure ()
 
--- not load comment entry when topic is initialTopic
+--TODO not load comment entry when topic is initialTopic
 commentEntry :: MonadWidget t m => Dynamic t Topic ->  m (Event t [Comment])
 commentEntry dTopic = divClass "comment_input" $ do
   rec
@@ -95,21 +123,15 @@ commentEntry dTopic = divClass "comment_input" $ do
         eContent = fmapMaybe maybeStrip $ tag (current $ _textArea_value area) eSubmit
         dSide = _dropdown_value drop
 
-        --before post
     dContent <- holdDyn "" eContent
     dNewComment <- newComment `mapDyn` dTopic `apDyn` dSide `apDyn` dContent
     let eNewComment = fmapMaybe id $ tagDyn dNewComment eSubmit
-    --eComment <- switchPromptlyDyn <$> widgetHold (pure never) (postComment <$> eNewComment)
     eComment <- postComment' eNewComment
 
-    --after post
-    --dComment <- dyn =<< mapDyn postComment dNewComment
-    --eComment <- switchPromptly never dComment
     drop <- dropdown Agree (constDyn selectList) $ def &
       attributes .~ constDyn ("class" =: "form-control")
     area <- textArea $ def & setValue .~ ("" <$ eSubmit) &
-      attributes .~ constDyn (mconcat ["class" =: "form-control",
-                                      "row" =: "3"])
+      attributes .~ constDyn (mconcat ["class" =: "form-control", "row" =: "3"])
     eSubmit <- do
       (e, _) <- elAttr' "button" (mconcat ["type" =: "button", "class" =: "form-control"]) $ text "Submit"
       pure $ domEvent Click e
@@ -127,7 +149,7 @@ commentsView dComments = do
         zone <- liftIO getCurrentTimeZone
         time <- forDyn c $ \cm -> case commentId cm of
                                   Nothing -> "未提交状态"
-                                  Just oid -> "time:" ++ z8Time (utcToZonedTime zone $ timestamp oid)
+                                  Just oid -> "time:" ++ prettyTime (utcToZonedTime zone $ timestamp oid)
 
         _ <- el "p" $ dynText time
         pure ()
@@ -183,7 +205,6 @@ navWidget =
       {-let result = ffilter (\t -> (not . null . topicTitle) t && (not . null . topicContent) t ) $-}
               {-attachWith const (current dTopic) submit-}
   {-return result-}
---TODO return a selcted key Dynamic
 {-
  -topicList :: MonadWidget t m =>Event t [Topic] -> m (Event t (Maybe ObjectId))
  -topicList eTs = do
