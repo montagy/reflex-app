@@ -49,7 +49,7 @@ page = do
       divClass "topic_wrapper" $ topicView eTopic
       eItemClick <- divClass "xiaohua_wrapper raiuds" $ do
         eObj <- switchPromptlyDyn <$>  widgetHold (pure never) (topicList' <$> eTopicList)
-        _ <- topicInput
+        _ <- divClass "topic__form" $ el "form" topicInput
         pure eObj
     pure ()
   footer
@@ -114,18 +114,19 @@ commentEntry :: MonadWidget t m => Dynamic t Topic ->  m (Event t [Comment])
 commentEntry dTopic = divClass "comment_input" $ do
   rec
     let
-        newComment :: Topic -> CommentSide -> Text -> Maybe Comment
+        newComment :: Topic -> CommentSide -> String -> Maybe Comment
         newComment t s c =
           case topicId t of
             Nothing -> Nothing
-            Just id' -> Just $ Comment Nothing id' s c
+            Just id' -> case maybeStrip c of
+                          Nothing -> Nothing
+                          Just c' -> Just $ Comment Nothing id' s c'
         selectList = Agree =: "agree" <> Against =: "against"
-        eContent = fmapMaybe maybeStrip $ tag (current $ value area) eSubmit
+        dContent = value area
         dSide = value drop
 
-    dContent <- holdDyn "" eContent
     dNewComment <- newComment `mapDyn` dTopic `apDyn` dSide `apDyn` dContent
-    let eNewComment = fmapMaybe id $ tagDyn dNewComment eSubmit
+    let eNewComment = fmapMaybe id $ tag (current dNewComment) eSubmit
     eComment <- postComment' eNewComment
 
     drop <- dropdown Agree (constDyn selectList) $ def &
