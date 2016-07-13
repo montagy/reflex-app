@@ -32,6 +32,10 @@ nubEvent e = do
   d <- holdDyn Nothing (Just <$> e)
   return $ fmapMaybe id $ updated (nubDyn d)
 
+buttonAttr :: (MonadWidget t m) => Dynamic t (Map String String) -> m (Event t ())
+buttonAttr attr = do
+  (element, _) <- elDynAttr' "button" attr $ text "Submit"
+  pure $ domEvent Click element
 page :: MonadWidget t m => m ()
 page = do
   header
@@ -60,12 +64,12 @@ topicInput :: MonadWidget t m => m (Event t Topic)
 topicInput = do
   rec
     title <- textInput $ def & setValue .~ ("" <$ submit)
-      & attributes .~ constDyn ("placeholder" =: "input a title")
+      & attributes .~ constDyn ("placeholder" =: "input a title" <> "class" =: "form-control")
 
     content <- textArea $ def & setValue .~ ("" <$ submit)
-      & attributes .~ constDyn ("placeholder" =: "input content")
+      & attributes .~ constDyn ("placeholder" =: "input content" <> "class" =: "form-control")
 
-    submit <- button "Submit"
+    submit <- buttonAttr $ constDyn ("class" =: "form-control")
   let
       bTitle = current $ value title
       bContent = current $ value content
@@ -133,9 +137,7 @@ commentEntry dTopic = divClass "comment_input" $ do
       attributes .~ constDyn ("class" =: "form-control")
     area <- textArea $ def & setValue .~ ("" <$ submit) &
       attributes .~ constDyn (mconcat ["class" =: "form-control", "row" =: "3"])
-    submit <- do
-      (e, _) <- elAttr' "button" (mconcat ["type" =: "button", "class" =: "form-control"]) $ text "Submit"
-      pure $ domEvent Click e
+    submit <- buttonAttr  $ constDyn (mconcat ["type" =: "button", "class" =: "form-control"])
 
   return eComment
 
