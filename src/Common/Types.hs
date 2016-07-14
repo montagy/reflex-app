@@ -6,14 +6,13 @@ import Data.Aeson
 import qualified Data.Aeson as A
 import GHC.Generics
 import Data.Text (Text, unpack, pack)
-import Data.Time
 import Data.Bson
 import Control.Monad
 
 instance ToJSON ObjectId where
-  toJSON oid@(Oid x y) = A.String . pack $ show oid
+  toJSON oid = A.String . pack $ show oid
 instance FromJSON ObjectId where
-  parseJSON oid@(A.String v) = return . read . unpack $ v
+  parseJSON (A.String v) = return . read . unpack $ v
   parseJSON _ = mzero
 
 data Topic = Topic

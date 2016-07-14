@@ -36,6 +36,7 @@ buttonAttr :: (MonadWidget t m) => Dynamic t (Map String String) -> m (Event t (
 buttonAttr attr = do
   (element, _) <- elDynAttr' "button" attr $ text "Submit"
   pure $ domEvent Click element
+
 page :: MonadWidget t m => m ()
 page = do
   header
@@ -45,17 +46,13 @@ page = do
         ("class" =: "loading" <>) . (\b -> if b then mempty else  "style" =: "display:none")
           <$> leftmost [True <$ eItemClick, False <$ eTopic]
       loading dAttr
-      eTopic' <- fakeGetData Nothing
-      eTopic'' <- fetchTopic eItemClick
-      let eTopic = leftmost [eTopic', eTopic'', eNewTopic]
+      eTopic <- leftmost <$> sequence [getNewestTopic, fetchTopic eItemClick, pure eNewTopic]
       --TODO 刷新按钮来获得随机或最新的topicList
-      eTopicList' <- getTopicList
-      eTopicList'' <- fetchTopicList eNewTopic
-      let eTopicList = leftmost [eTopicList', eTopicList'']
+      eTopicList <- leftmost <$> sequence [getTopicList, fetchTopicList eNewTopic]
       divClass "topic_wrapper" $ topicView eTopic
       (eItemClick, eNewTopic) <- divClass "xiaohua_wrapper raiuds" $ do
         eObj <- divClass "topic__list" $ switchPromptlyDyn <$>  widgetHold (pure never) (topicList' <$> eTopicList)
-        eNewTopic' <- divClass "topic__form" $ el "form" topicInput
+        eNewTopic' <- divClass "topic__form" topicInput
         pure (eObj, eNewTopic')
     pure ()
   footer
@@ -83,7 +80,6 @@ topicInput = do
       eSubmitTopic = ffilter g $ attachWith f bContent (tag bTitle submit)
 
   postTopic eSubmitTopic
-
 
 --TODO return a selcted key Dynamic
 topicList' :: MonadWidget t m => [Topic] -> m (Event t ObjectId)
@@ -174,6 +170,7 @@ stripString  = T.strip . T.pack
 maybeStrip :: String -> Maybe Text
 maybeStrip (stripString -> "") = Nothing
 maybeStrip (stripString -> trimmed) = Just trimmed
+
 -- | Add a new value to a map; automatically choose an unused key
 {-insertNew_ :: (Enum k, Ord k) => v -> Map k v -> Map k v-}
 {-insertNew_ v m = case Map.maxViewWithKey m of-}

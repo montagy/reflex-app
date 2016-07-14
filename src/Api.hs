@@ -33,12 +33,9 @@ fetchTopic e = do
   let req id' = xhrRequest "GET" (host <> "topic/" <> show id') def
 
   fetchByEvent $ req <$> e
-fakeGetData :: MonadWidget t m => Maybe ObjectId -> m (Event t Topic)
-fakeGetData s = do
-  let req =
-        case s of
-            Nothing -> xhrRequest "GET" (host <> "topic/newest") def
-            Just id' -> xhrRequest "GET" (host <> "topic/" <> show id') def
+getNewestTopic :: MonadWidget t m => m (Event t Topic)
+getNewestTopic = do
+  let req = xhrRequest "GET" (host <> "topic/newest") def
   e <- getPostBuild
   fetchByEvent (req <$ e)
 
