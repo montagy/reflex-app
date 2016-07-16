@@ -4,10 +4,14 @@ module Api where
 import Common.Types
 import Reflex
 import Reflex.Dom
-import Data.Bson
+import Data.Bson (ObjectId)
 import Data.Monoid
 import Data.String
-import Data.Aeson (FromJSON)
+import Data.Aeson (FromJSON, ToJSON, toJSON)
+import Data.Aeson.Encode (encodeToTextBuilder)
+import qualified Data.Text.Lazy as LT
+import qualified Data.Text.Lazy.Builder as B
+import Data.Map (Map)
 {-import Data.Time-}
 {-import Control.Monad.IO.Class (liftIO)-}
 
@@ -57,9 +61,18 @@ postComment c = do
   e <- getPostBuild
   fetchByEvent (req <$ e)
 
+postJsonWithHeader :: (ToJSON a) => String -> Map String String -> a -> XhrRequest
+postJsonWithHeader url headers a =
+  XhrRequest "POST" url $ def { _xhrRequestConfig_headers = headerUrlEnc
+                              , _xhrRequestConfig_sendData = Just body}
+
+  where
+    headerUrlEnc = "Content-type" =: "application/json" <> headers
+    body = LT.unpack . B.toLazyText . encodeToTextBuilder $ toJSON a
+
 postComment'  :: MonadWidget t m => Event t Comment -> m (Event t [Comment])
 postComment'  e = do
-  let req  = postJson (host <> "comment")
+  let req  = postJsonWithHeader (host <> "comment") ("servant-auth-cookie" =: "alice")
 
   fetchByEvent (req <$> e)
 
@@ -68,3 +81,17 @@ postTopic e = do
   let req = postJson (host <> "topic")
 
   fetchByEvent (req <$> e)
+
+login :: MonadWidget t m => Event t User -> m (Event t (Either String UserInfo))
+login e = do
+  let req = postJson (host <> "login")
+      f :: XhrResponse -> Either String UserInfo
+      f res = case _xhrResponse_status res of
+                200 -> case decodeXhrResponse res of
+                        Nothing -> Left "sth wrong happened"
+                        Just userinfo -> Right userinfo
+                401 -> Left "not valid user"
+                _ -> Left "none"
+  fmap f <$> performRequestAsync (req <$> e)
+
+

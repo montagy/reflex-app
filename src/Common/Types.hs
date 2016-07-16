@@ -37,3 +37,19 @@ instance ToJSON Comment
 instance FromJSON Comment
 instance ToJSON Topic
 instance FromJSON Topic
+
+type UserName = Text
+type Password = Text
+data UserInfo = UserInfo
+  { infoName :: UserName
+  } deriving (Eq, Show, Generic)
+data User = User
+  { username :: UserName
+  , password :: Password
+  } deriving (Eq, Show, Generic)
+
+instance ToJSON User
+instance FromJSON User
+instance ToJSON UserInfo
+instance FromJSON UserInfo
+

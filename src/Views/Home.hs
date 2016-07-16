@@ -19,6 +19,7 @@ import Data.Time
 import qualified Data.Text as T
 import Data.Text (Text)
 import Data.Maybe
+import Data.Function (on)
 
 import Common.Types
 import Api
@@ -54,6 +55,9 @@ page = do
         eObj <- divClass "topic__list" $ switchPromptlyDyn <$>  widgetHold (pure never) (topicList' <$> eTopicList)
         eNewTopic' <- divClass "topic__form" topicInput
         pure (eObj, eNewTopic')
+
+    -- on fire , is login
+    _ <- loginW
     pure ()
   footer
 
@@ -194,3 +198,18 @@ navWidget :: MonadWidget t m => m ()
 navWidget =
   el "nav" $
     divClass "nav__content" $ text "吵架与看笑话"
+
+loginW :: MonadWidget t m => m (Event t UserInfo)
+loginW =
+  divClass "login-form" $ do
+    name <- textInput def
+    pwd <- textInput def
+    submit <- button "Submit"
+    user <- combineDyn (User `on` T.pack) (value name) (value pwd)
+    eeUserInfo <- login (tagDyn user submit)
+    let
+        eAuthErr = fmapMaybe (either Just (const Nothing)) eeUserInfo
+        eAuthSuccess = fmapMaybe (either (const Nothing) Just) eeUserInfo
+
+    _ <- dynText =<< holdDyn "" (leftmost [eAuthErr, T.unpack . infoName <$> eAuthSuccess])
+    pure eAuthSuccess
