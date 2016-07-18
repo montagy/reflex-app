@@ -10,7 +10,6 @@ module Views.Home (
 
 import Reflex
 import Reflex.Dom
-import Control.Monad
 import Control.Monad.IO.Class (liftIO)
 import Data.Monoid
 import Data.Map (Map)
@@ -18,12 +17,11 @@ import qualified Data.Map as Map
 import Data.Time
 import qualified Data.Text as T
 import Data.Text (Text)
-import Data.Maybe
-import Data.Function (on)
 
 import Common.Types
 import Api
 import Data.Bson (timestamp, ObjectId)
+import Widgets.Login
 
 prettyTime :: FormatTime t => t -> String
 prettyTime = formatTime defaultTimeLocale "%F %T"
@@ -184,31 +182,33 @@ footer = do
   el "footer"  $ el "div" $ text "This is a new text line"
   pure ()
 
-header :: MonadWidget t m => m (Event t UserInfo)
+header :: MonadWidget t m => m (Dynamic t (Either String UserInfo))
 header =
   el "header" navWidget
 
 loading :: MonadWidget t m => Dynamic t (Map String String) -> m ()
 loading dAttr = elDynAttr "div" dAttr $ text "loading..."
 
-navWidget :: MonadWidget t m => m (Event t UserInfo)
+navWidget :: MonadWidget t m => m (Dynamic t (Either String UserInfo))
 navWidget =
   el "nav" $
     divClass "nav__content" $ do
       text "吵架与看笑话"
-      loginW
+      loginModal
 -- on fire , is login
-loginW :: MonadWidget t m => m (Event t UserInfo)
-loginW =
-  divClass "login-form" $ do
-    name <- textInput def
-    pwd <- textInput def
-    submit <- button "Submit"
-    user <- combineDyn User (value name) (value pwd)
-    eeUserInfo <- login (tagDyn user submit)
-    let
-        eAuthErr = fmapMaybe (either Just (const Nothing)) eeUserInfo
-        eAuthSuccess = fmapMaybe (either (const Nothing) Just) eeUserInfo
-
-    _ <- dynText =<< holdDyn "" (leftmost [eAuthErr, T.unpack . infoName <$> eAuthSuccess])
-    pure eAuthSuccess
+{-
+ -loginW :: MonadWidget t m => m (Event t UserInfo)
+ -loginW =
+ -  divClass "login-form" $ do
+ -    name <- textInput def
+ -    pwd <- textInput def
+ -    submit <- button "Submit"
+ -    user <- combineDyn User (value name) (value pwd)
+ -    eeUserInfo <- login (tagDyn user submit)
+ -    let
+ -        eAuthErr = fmapMaybe (either Just (const Nothing)) eeUserInfo
+ -        eAuthSuccess = fmapMaybe (either (const Nothing) Just) eeUserInfo
+ -
+ -    _ <- dynText =<< holdDyn "" (leftmost [eAuthErr, T.unpack . infoName <$> eAuthSuccess])
+ -    pure eAuthSuccess
+ -}
