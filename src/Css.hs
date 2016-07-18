@@ -151,6 +151,9 @@ css = do
     transitions [("border-color", sec 0.15, easeInOut, sec 0),
                 ("box-shadow", sec 0.15, easeInOut, sec 0)]
 
+  ".login-form" ? do
+    float floatRight
+
 
 reset :: Css
 reset = do

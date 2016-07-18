@@ -12,6 +12,7 @@ import Data.Aeson.Encode (encodeToTextBuilder)
 import qualified Data.Text.Lazy as LT
 import qualified Data.Text.Lazy.Builder as B
 import Data.Map (Map)
+import Codec.Binary.Base64.String
 {-import Data.Time-}
 {-import Control.Monad.IO.Class (liftIO)-}
 
@@ -84,7 +85,11 @@ postTopic e = do
 
 login :: MonadWidget t m => Event t User -> m (Event t (Either String UserInfo))
 login e = do
-  let req = postJson (host <> "login")
+  let
+      req (User usr pwd) = xhrRequest "GET" (host <> "login") def {
+        _xhrRequestConfig_headers =
+          "Authorization" =: ("Basic " <> encode (usr <> ":" <> pwd))
+      }
       f :: XhrResponse -> Either String UserInfo
       f res = case _xhrResponse_status res of
                 200 -> case decodeXhrResponse res of

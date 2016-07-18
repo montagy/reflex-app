@@ -38,14 +38,12 @@ instance FromJSON Comment
 instance ToJSON Topic
 instance FromJSON Topic
 
-type UserName = Text
-type Password = Text
 data UserInfo = UserInfo
-  { infoName :: UserName
+  { infoName :: Text
   } deriving (Eq, Show, Generic)
 data User = User
-  { username :: UserName
-  , password :: Password
+  { username :: String
+  , password :: String
   } deriving (Eq, Show, Generic)
 
 instance ToJSON User

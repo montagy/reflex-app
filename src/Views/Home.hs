@@ -40,7 +40,7 @@ buttonAttr attr = do
 
 page :: MonadWidget t m => m ()
 page = do
-  header
+  _ <- header
   divClass "container" $ do
     rec
       dAttr <- holdDyn mempty $
@@ -56,8 +56,6 @@ page = do
         eNewTopic' <- divClass "topic__form" topicInput
         pure (eObj, eNewTopic')
 
-    -- on fire , is login
-    _ <- loginW
     pure ()
   footer
 
@@ -186,26 +184,27 @@ footer = do
   el "footer"  $ el "div" $ text "This is a new text line"
   pure ()
 
-header :: MonadWidget t m => m ()
-header = do
+header :: MonadWidget t m => m (Event t UserInfo)
+header =
   el "header" navWidget
-  pure ()
 
 loading :: MonadWidget t m => Dynamic t (Map String String) -> m ()
 loading dAttr = elDynAttr "div" dAttr $ text "loading..."
 
-navWidget :: MonadWidget t m => m ()
+navWidget :: MonadWidget t m => m (Event t UserInfo)
 navWidget =
   el "nav" $
-    divClass "nav__content" $ text "吵架与看笑话"
-
+    divClass "nav__content" $ do
+      text "吵架与看笑话"
+      loginW
+-- on fire , is login
 loginW :: MonadWidget t m => m (Event t UserInfo)
 loginW =
   divClass "login-form" $ do
     name <- textInput def
     pwd <- textInput def
     submit <- button "Submit"
-    user <- combineDyn (User `on` T.pack) (value name) (value pwd)
+    user <- combineDyn User (value name) (value pwd)
     eeUserInfo <- login (tagDyn user submit)
     let
         eAuthErr = fmapMaybe (either Just (const Nothing)) eeUserInfo
