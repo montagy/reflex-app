@@ -10,6 +10,9 @@ import Common.Types
 import qualified Api
 import Utils
 
+formControl :: Reflex t => Dynamic t AttributeMap
+formControl = constDyn ("class" =: "form-control")
+
 loginHeader :: MonadWidget t m => m (Event t ())
 loginHeader =
   divClass "modal-header" $ do
@@ -19,17 +22,17 @@ loginHeader =
 
 loginBody :: MonadWidget t m => m (Dynamic t (Either String UserInfo))
 loginBody = do
-  name <- textInput $ def & attributes .~ constDyn ("class" =: "form-control")
-  pwd <- textInput $ def & attributes .~ constDyn ("class" =: "form-control")
-  submit <- buttonAttr "Submit" $ constDyn ("class" =: "form-control")
+  name <- textInput $ def & attributes .~ formControl
+  pwd <- textInput $ def & attributes .~ formControl
+  submit <- buttonAttr "Submit" formControl
   user <- combineDyn User (value name) (value pwd)
   holdDyn (Left "") =<< Api.login (tagDyn user submit)
 
 loginFooter :: MonadWidget t m => Dynamic t (Either String UserInfo) -> m (Event t (), Event t ())
 loginFooter body =
   divClass "modal-footer" $ do
-    cancel <- button "Cancel"
-    submit <- button "OK"
+    cancel <- buttonAttr "Cancel" formControl
+    submit <- buttonAttr "OK" formControl
     pure (cancel, submit)
 
 loginModal :: MonadWidget t m => m (Event t (Either String UserInfo), Event t ())

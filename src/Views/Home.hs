@@ -12,7 +12,6 @@ import Reflex
 import Reflex.Dom
 import Control.Monad.IO.Class (liftIO)
 import Data.Monoid
-import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.Time
 import qualified Data.Text as T
@@ -174,7 +173,7 @@ header :: MonadWidget t m => m (Dynamic t (Either String UserInfo))
 header =
   el "header" navWidget
 
-loading :: MonadWidget t m => Dynamic t (Map String String) -> m ()
+loading :: MonadWidget t m => Dynamic t AttributeMap -> m ()
 loading dAttr = elDynAttr "div" dAttr $ text "loading..."
 
 navWidget :: MonadWidget t m => m (Dynamic t (Either String UserInfo))
@@ -183,7 +182,8 @@ navWidget =
     divClass "nav__content" $ do
       text "吵架与看笑话"
       dLogin <- loginW
-      _ <- button "logout"
+      dAttr <- mapDyn (either ( const $ "style" =: "display:none") (const $ "style" =: "display:block")) dLogin
+      _ <- buttonAttr "logout" dAttr
       pure dLogin
 -- on fire , is login
 {-
