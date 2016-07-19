@@ -99,4 +99,3 @@ login e = do
                 _ -> Left "none"
   fmap f <$> performRequestAsync (req <$> e)
 
-

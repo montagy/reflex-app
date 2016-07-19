@@ -185,20 +185,3 @@ navWidget =
       dAttr <- mapDyn (either ( const $ "style" =: "display:none") (const $ "style" =: "display:block")) dLogin
       _ <- buttonAttr "logout" dAttr
       pure dLogin
--- on fire , is login
-{-
- -loginW :: MonadWidget t m => m (Event t UserInfo)
- -loginW =
- -  divClass "login-form" $ do
- -    name <- textInput def
- -    pwd <- textInput def
- -    submit <- button "Submit"
- -    user <- combineDyn User (value name) (value pwd)
- -    eeUserInfo <- login (tagDyn user submit)
- -    let
- -        eAuthErr = fmapMaybe (either Just (const Nothing)) eeUserInfo
- -        eAuthSuccess = fmapMaybe (either (const Nothing) Just) eeUserInfo
- -
- -    _ <- dynText =<< holdDyn "" (leftmost [eAuthErr, T.unpack . infoName <$> eAuthSuccess])
- -    pure eAuthSuccess
- -}
