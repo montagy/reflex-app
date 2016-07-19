@@ -8,13 +8,13 @@ import Reflex.Dom
 import Reflex.Dom.Contrib.Widgets.Modal
 import Common.Types
 import qualified Api
+import Utils
 
 loginHeader :: MonadWidget t m => m (Event t ())
 loginHeader =
   divClass "modal-header" $ do
-    (btn, _) <- elAttr' "button" ("class" =: "close") $ text "X"
     elAttr "h4" ("class" =: "modal-title") $ text "Modal title"
-    pure $ domEvent Click btn
+    buttonAttr "X" $ constDyn ("class" =: "close")
 
 loginBody :: MonadWidget t m => m (Dynamic t (Either String UserInfo))
 loginBody = do
