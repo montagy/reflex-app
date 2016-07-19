@@ -54,10 +54,12 @@ loginModal eToggle =
 loginW :: MonadWidget t m => m (Dynamic t (Either String UserInfo))
 loginW = do
   rec
-    modal <- button "登陆"
+    modal <- buttonAttr "登陆" dAttr
+    dAttr <- mapDyn (either (const $ "style" =: "display:block;") (const $ "style" =: "display:none;")) dUserInfo
     dModalAttr' <- mapDyn (("class" =: "modal") <>) dModalAttr
     (eeUserInfo, dModalAttr) <- elDynAttr "modal" dModalAttr' $
       loginModal modal
+    dUserInfo <- holdDyn (Left "") eeUserInfo
+  pure dUserInfo
 
-  holdDyn (Left "") eeUserInfo
 
