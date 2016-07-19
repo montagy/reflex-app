@@ -13,14 +13,15 @@ import Utils
 loginHeader :: MonadWidget t m => m (Event t ())
 loginHeader =
   divClass "modal-header" $ do
+    btn <- buttonAttr "X" $ constDyn ("class" =: "close")
     elAttr "h4" ("class" =: "modal-title") $ text "Modal title"
-    buttonAttr "X" $ constDyn ("class" =: "close")
+    pure btn
 
 loginBody :: MonadWidget t m => m (Dynamic t (Either String UserInfo))
 loginBody = do
   name <- textInput $ def & attributes .~ constDyn ("class" =: "form-control")
   pwd <- textInput $ def & attributes .~ constDyn ("class" =: "form-control")
-  submit <- button "Submit"
+  submit <- buttonAttr "Submit" $ constDyn ("class" =: "form-control")
   user <- combineDyn User (value name) (value pwd)
   holdDyn (Left "") =<< Api.login (tagDyn user submit)
 

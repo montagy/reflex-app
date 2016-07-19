@@ -32,6 +32,7 @@ modal = do
     minHeight $ px 16.43
     sym padding (px 15)
     borderBottom solid (px 1) "#e5e5e5"
+    color "#333"
 
   ".modal-body" ? do
     position relative
