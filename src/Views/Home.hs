@@ -22,19 +22,7 @@ import Common.Types
 import Api
 import Data.Bson (timestamp, ObjectId)
 import Widgets.Login
-
-prettyTime :: FormatTime t => t -> String
-prettyTime = formatTime defaultTimeLocale "%F %T"
-
-nubEvent :: (MonadWidget t m, Eq a) => Event t a -> m (Event t a)
-nubEvent e = do
-  d <- holdDyn Nothing (Just <$> e)
-  return $ fmapMaybe id $ updated (nubDyn d)
-
-buttonAttr :: (MonadWidget t m) => Dynamic t (Map String String) -> m (Event t ())
-buttonAttr attr = do
-  (element, _) <- elDynAttr' "button" attr $ text "Submit"
-  pure $ domEvent Click element
+import Utils
 
 page :: MonadWidget t m => m ()
 page = do
@@ -66,7 +54,7 @@ topicInput = do
     content <- textArea $ def & setValue .~ ("" <$ submit)
       & attributes .~ constDyn ("placeholder" =: "input content" <> "class" =: "form-control")
 
-    submit <- buttonAttr $ constDyn ("class" =: "form-control")
+    submit <- buttonAttr "submit" $ constDyn ("class" =: "form-control")
   let
       bTitle = current $ value title
       bContent = current $ value content
@@ -133,7 +121,7 @@ commentEntry dTopic = divClass "comment_input" $ do
       attributes .~ constDyn ("class" =: "form-control")
     area <- textArea $ def & setValue .~ ("" <$ submit) &
       attributes .~ constDyn (mconcat ["class" =: "form-control", "row" =: "3"])
-    submit <- buttonAttr  $ constDyn (mconcat ["type" =: "button", "class" =: "form-control"])
+    submit <- buttonAttr "submit" $ constDyn (mconcat ["type" =: "button", "class" =: "form-control"])
 
   return eComment
 
@@ -194,7 +182,9 @@ navWidget =
   el "nav" $
     divClass "nav__content" $ do
       text "吵架与看笑话"
-      loginModal
+      dLogin <- loginW
+      _ <- button "logout"
+      pure dLogin
 -- on fire , is login
 {-
  -loginW :: MonadWidget t m => m (Event t UserInfo)

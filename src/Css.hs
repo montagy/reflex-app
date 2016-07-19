@@ -9,6 +9,7 @@ import qualified Clay.Flexbox as F
 import qualified Data.Text.Lazy as TL
 import qualified Data.Text.Encoding as TE
 import Data.Monoid ((<>))
+import Css.Modal (modal)
 
 bs :: ByteString
 bs = TE.encodeUtf8 . TL.toStrict . render $ css
@@ -40,6 +41,7 @@ selectedText =
 css :: Css
 css = do
   reset
+  modal
   body ? do
     backgroundColor "#e9e9e9"
     fontFamily [] [monospace]

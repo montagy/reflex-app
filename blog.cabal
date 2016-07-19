@@ -25,6 +25,7 @@ library
                  , Views.Post
                  , Widgets.Login
                  , Css.Modal
+                 , Utils
 
   build-depends: base >= 4.8 && < 5.0
                , reflex
