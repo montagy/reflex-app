@@ -13,7 +13,7 @@ import qualified Data.Text.Lazy as LT
 import qualified Data.Text.Lazy.Builder as B
 import Data.Map (Map)
 import Codec.Binary.Base64.String
-import Storage
+import qualified Storage as Storage
 
 host :: IsString a => a
 host = "http://localhost:3030/"
@@ -89,5 +89,10 @@ login e = do
 
   eeUserInfo <- fmap f <$> performRequestAsync (req <$> e)
   let eSucLogin = fmapMaybe (either (const Nothing) Just) eeUserInfo
-  performEvent_ $ store "user" <$> eSucLogin
+  performEvent_ $ Storage.store "user" <$> eSucLogin
   pure eeUserInfo
+
+confirmUser :: MonadWidget t m => m (Event t (Maybe UserInfo))
+confirmUser = do
+  e <- getPostBuild
+  performEvent $ Storage.read "user" <$ e
