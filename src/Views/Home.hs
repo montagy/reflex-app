@@ -22,9 +22,13 @@ import Widgets.Login
 import Utils
 import Storage (remove)
 
+userHelper' :: MonadWidget t m => Maybe UserInfo -> m (Event t Topic)
+userHelper' Nothing = return never
+userHelper' (Just _) = divClass "topic__form" topicInput
+
 page :: MonadWidget t m => m ()
 page = do
-  dMUser <- header
+  dUser <- header
   divClass "container" $ do
     rec
       dAttr <- holdDyn mempty $
@@ -37,7 +41,7 @@ page = do
       divClass "topic_wrapper" $ topicView eTopic
       (eItemClick, eNewTopic) <- divClass "xiaohua_wrapper raiuds" $ do
         eObj <- divClass "topic__list" $ switchPromptlyDyn <$>  widgetHold (pure never) (topicList' <$> eTopicList)
-        eNewTopic' <- divClass "topic__form" topicInput
+        eNewTopic' <- switchPromptly never =<< dyn =<< mapDyn userHelper' dUser
         pure (eObj, eNewTopic')
 
     pure ()
@@ -170,6 +174,7 @@ navWidget =
 userHelper :: MonadWidget t m => Maybe UserInfo -> m (Event t (Maybe UserInfo))
 userHelper Nothing =  loginW
 userHelper (Just _) = do
+  --TODO 用户功能,下拉菜单型
   eLogout <- button "logout"
   performEvent_ (remove "user" <$ eLogout)
   pure $ Nothing <$ eLogout
