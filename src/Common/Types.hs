@@ -8,6 +8,7 @@ import GHC.Generics
 import Data.Text (Text, unpack, pack)
 import Data.Bson
 import Control.Monad
+import Data.Default
 
 instance ToJSON ObjectId where
   toJSON oid = A.String . pack $ show oid
@@ -22,6 +23,13 @@ data Topic = Topic
   , topicComments :: [Comment]
   } deriving (Eq, Show, Generic)
 
+instance Default Topic where
+  def = Topic
+    { topicId = Nothing
+    , topicTitle = ""
+    , topicContent = ""
+    , topicComments = []
+    }
 data Comment = Comment
   { commentId :: Maybe ObjectId
   , commentTopicId :: ObjectId

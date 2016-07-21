@@ -25,7 +25,7 @@ import Utils
 
 page :: MonadWidget t m => m ()
 page = do
-  _ <- header
+  eeUserInfo <- header
   divClass "container" $ do
     rec
       dAttr <- holdDyn mempty $
@@ -80,12 +80,9 @@ topicList' ts = do
   es <- mapM view ts
   nubEvent (leftmost es)
 
-initialTopic :: Topic
-initialTopic = Topic Nothing "" "" []
-
 topicView :: MonadWidget t m => Event t Topic -> m ()
 topicView eTopic = do
-  dTopic <- holdDyn initialTopic eTopic
+  dTopic <- holdDyn def eTopic
   divClass "topic radius" $ do
     divClass "topic__title" $ dynText =<< mapDyn (T.unpack . topicTitle) dTopic
     divClass "topic__content" $ dynText =<< mapDyn (T.unpack . topicContent) dTopic
