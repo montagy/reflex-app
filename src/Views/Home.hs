@@ -148,12 +148,6 @@ commentsView dComments = do
 
   pure ()
 
--- | Add a new value to a map; automatically choose an unused key
-{-insertNew_ :: (Enum k, Ord k) => v -> Map k v -> Map k v-}
-{-insertNew_ v m = case Map.maxViewWithKey m of-}
-  {-Nothing -> Map.singleton (toEnum 0) v-}
-  {-Just ((k, _), _) -> Map.insert (succ k) v m-}
-
 footer :: MonadWidget t m => m ()
 footer = do
   el "footer"  $ el "div" $ text "This is a new text line"
@@ -174,15 +168,14 @@ navWidget =
       divClass "login-logout" $ do
         rec
           eInitUser <- confirmUser
-          let emUserInfo = leftmost [eInitUser, eUserInfo]
-          eUserInfo <- switchPromptlyDyn <$> widgetHold (return never) (userHelper <$> emUserInfo)
+          let eUserInfo = leftmost [eInitUser, eUserInfo']
+          eUserInfo' <- switchPromptlyDyn <$> widgetHold (return never) (userHelper <$> eUserInfo)
 
-        holdDyn Nothing emUserInfo
+        holdDyn Nothing eUserInfo
 
 userHelper :: MonadWidget t m => Maybe UserInfo -> m (Event t (Maybe UserInfo))
-userHelper user =  case user of
-            Nothing -> loginW
-            Just _ -> do
-              eLogout <- button "logout"
-              performEvent_ (remove "user" <$ eLogout)
-              pure $ Nothing <$ eLogout
+userHelper Nothing =  loginW
+userHelper (Just _) = do
+  eLogout <- button "logout"
+  performEvent_ (remove "user" <$ eLogout)
+  pure $ Nothing <$ eLogout

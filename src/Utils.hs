@@ -33,3 +33,9 @@ stripString  = T.strip . T.pack
 maybeStrip :: String -> Maybe Text
 maybeStrip (stripString -> "") = Nothing
 maybeStrip (stripString -> trimmed) = Just trimmed
+
+-- | Add a new value to a map; automatically choose an unused key
+{-insertNew_ :: (Enum k, Ord k) => v -> Map k v -> Map k v-}
+{-insertNew_ v m = case Map.maxViewWithKey m of-}
+  {-Nothing -> Map.singleton (toEnum 0) v-}
+  {-Just ((k, _), _) -> Map.insert (succ k) v m-}
