@@ -5,7 +5,7 @@ import Data.Aeson (encode, ToJSON, FromJSON, eitherDecode)
 import Data.ByteString.Lazy (toStrict, fromStrict)
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Control.Monad.IO.Class (liftIO, MonadIO)
-import JavaScript.Web.Storage (setItem, localStorage, getItem)
+import JavaScript.Web.Storage (setItem, localStorage, getItem, removeItem)
 import Data.JSString.Text (textToJSString, textFromJSString)
 import Data.Text (Text)
 
@@ -21,3 +21,6 @@ read k = liftIO $ do
     Just jss -> case eitherDecode (fromStrict . encodeUtf8 . textFromJSString $ jss) of
                   Left _ -> return Nothing
                   Right result -> return $ Just result
+
+remove ::(MonadIO m) => Text -> m ()
+remove k = liftIO $ removeItem (textToJSString k) localStorage
