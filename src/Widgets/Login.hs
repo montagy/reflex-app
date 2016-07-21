@@ -48,18 +48,18 @@ loginModal eToggle =
     pure (eeUserInfo, dModalAttr)
 
   where
-    visiblility True = "style" =: "display:block;"
-    visiblility False = "style" =: "display:none;"
+    visiblility True = displayBlock
+    visiblility False = displayNone
 
-loginW :: MonadWidget t m => m (Dynamic t (Either String UserInfo))
+loginW :: MonadWidget t m => m (Event t (Maybe UserInfo))
 loginW = do
   rec
     modal <- buttonAttr "登陆" dAttr
-    dAttr <- mapDyn (either (const $ "style" =: "display:block;") (const $ "style" =: "display:none;")) dUserInfo
+    dAttr <- mapDyn (either (const displayBlock) (const displayNone)) dUserInfo
     dModalAttr' <- mapDyn (("class" =: "modal") <>) dModalAttr
     (eeUserInfo, dModalAttr) <- elDynAttr "modal" dModalAttr' $
       loginModal modal
     dUserInfo <- holdDyn (Left "") eeUserInfo
-  pure dUserInfo
 
+  pure $ either (const Nothing) Just <$> eeUserInfo
 

@@ -19,3 +19,7 @@ buttonAttr :: (MonadWidget t m) => String -> Dynamic t (Map String String) -> m 
 buttonAttr t attr = do
   (element, _) <- elDynAttr' "button" attr $ text t
   pure $ domEvent Click element
+
+displayNone, displayBlock :: AttributeMap
+displayNone = "style" =: "display:none;"
+displayBlock = "style" =: "display:block;"

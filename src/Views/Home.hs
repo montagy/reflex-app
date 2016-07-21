@@ -22,6 +22,7 @@ import Api
 import Data.Bson (timestamp, ObjectId)
 import Widgets.Login
 import Utils
+import Storage (remove)
 
 page :: MonadWidget t m => m ()
 page = do
@@ -166,19 +167,30 @@ footer = do
   el "footer"  $ el "div" $ text "This is a new text line"
   pure ()
 
-header :: MonadWidget t m => m (Dynamic t (Either String UserInfo))
-header =
+header :: MonadWidget t m => m (Dynamic t (Maybe UserInfo))
+header = do
   el "header" navWidget
 
 loading :: MonadWidget t m => Dynamic t AttributeMap -> m ()
 loading dAttr = elDynAttr "div" dAttr $ text "loading..."
 
-navWidget :: MonadWidget t m => m (Dynamic t (Either String UserInfo))
+navWidget :: MonadWidget t m => m (Dynamic t (Maybe UserInfo))
 navWidget =
   el "nav" $
     divClass "nav__content" $ do
       text "吵架与看笑话"
-      dLogin <- loginW
-      dAttr <- mapDyn (either ( const $ "style" =: "display:none") (const $ "style" =: "display:block")) dLogin
-      _ <- buttonAttr "logout" dAttr
-      pure dLogin
+      divClass "login-logout" $ do
+        rec
+          eInitUser <- confirmUser
+          let emUserInfo = leftmost [eInitUser, eUserInfo]
+          eUserInfo <- switchPromptlyDyn <$> widgetHold (return never) (userHelper <$> emUserInfo)
+
+        holdDyn Nothing emUserInfo
+
+userHelper :: MonadWidget t m => Maybe UserInfo -> m (Event t (Maybe UserInfo))
+userHelper user =  case user of
+            Nothing -> loginW
+            Just _ -> do
+              eLogout <- button "logout"
+              performEvent_ (remove "user" <$ eLogout)
+              pure $ Nothing <$ eLogout
