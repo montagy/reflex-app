@@ -22,9 +22,6 @@ import Widgets.Login
 import Utils
 import Storage (remove)
 
-userHelper' :: MonadWidget t m => Maybe UserInfo -> m (Event t Topic)
-userHelper' Nothing = return never
-userHelper' (Just _) = divClass "topic__form" topicInput
 
 page :: MonadWidget t m => m ()
 page = do
@@ -38,9 +35,12 @@ page = do
       eTopic <- leftmost <$> sequence [getNewestTopic, fetchTopic eItemClick, pure eNewTopic]
       --TODO 刷新按钮来获得随机或最新的topicList
       eTopicList <- leftmost <$> sequence [getTopicList, fetchTopicList eNewTopic]
-      divClass "topic_wrapper" $ topicView eTopic
+      divClass "topic_wrapper" $ topicView dUser eTopic
       (eItemClick, eNewTopic) <- divClass "xiaohua_wrapper raiuds" $ do
         eObj <- divClass "topic__list" $ switchPromptlyDyn <$>  widgetHold (pure never) (topicList' <$> eTopicList)
+        let userHelper' :: MonadWidget t m => Maybe UserInfo -> m (Event t Topic)
+            userHelper' Nothing = return never
+            userHelper' (Just _) = divClass "topic__form" topicInput
         eNewTopic' <- switchPromptly never =<< dyn =<< mapDyn userHelper' dUser
         pure (eObj, eNewTopic')
 
@@ -81,8 +81,12 @@ topicList' ts = do
   es <- mapM view ts
   nubEvent (leftmost es)
 
-topicView :: MonadWidget t m => Event t Topic -> m ()
-topicView eTopic = do
+userHelper1 :: MonadWidget t m => Maybe UserInfo -> Dynamic t Topic -> m (Event t [Comment])
+userHelper1 Nothing _ = return never
+userHelper1 (Just _) t = commentEntry t
+
+topicView :: MonadWidget t m => Dynamic t (Maybe UserInfo) -> Event t Topic -> m ()
+topicView dUser eTopic = do
   dTopic <- holdDyn def eTopic
   divClass "topic radius" $ do
     divClass "topic__title" $ dynText =<< mapDyn (T.unpack . topicTitle) dTopic
@@ -92,7 +96,7 @@ topicView eTopic = do
       dCmts <- holdDyn [] $ leftmost [topicComments <$> eTopic, eCmts]
       commentsView dCmts
 
-      eCmts <- commentEntry dTopic
+      eCmts <- switchPromptly never =<< dyn =<< mapDyn (`userHelper1` dTopic) dUser
     pure ()
   pure ()
 
