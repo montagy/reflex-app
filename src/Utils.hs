@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module Utils where
 
@@ -6,6 +7,8 @@ import Reflex
 import Reflex.Dom
 import Data.Time
 import Data.Map (Map)
+import qualified Data.Text as T
+import Data.Text (Text)
 
 prettyTime :: FormatTime t => t -> String
 prettyTime = formatTime defaultTimeLocale "%F %T"
@@ -23,3 +26,10 @@ buttonAttr t attr = do
 displayNone, displayBlock :: AttributeMap
 displayNone = "style" =: "display:none;"
 displayBlock = "style" =: "display:block;"
+
+stripString :: String -> Text
+stripString  = T.strip . T.pack
+
+maybeStrip :: String -> Maybe Text
+maybeStrip (stripString -> "") = Nothing
+maybeStrip (stripString -> trimmed) = Just trimmed

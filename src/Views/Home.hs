@@ -1,7 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecursiveDo #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
 module Views.Home (
@@ -26,7 +25,7 @@ import Storage (remove)
 
 page :: MonadWidget t m => m ()
 page = do
-  eeUserInfo <- header
+  dMUser <- header
   divClass "container" $ do
     rec
       dAttr <- holdDyn mempty $
@@ -149,13 +148,6 @@ commentsView dComments = do
 
   pure ()
 
-stripString :: String -> Text
-stripString  = T.strip . T.pack
-
-maybeStrip :: String -> Maybe Text
-maybeStrip (stripString -> "") = Nothing
-maybeStrip (stripString -> trimmed) = Just trimmed
-
 -- | Add a new value to a map; automatically choose an unused key
 {-insertNew_ :: (Enum k, Ord k) => v -> Map k v -> Map k v-}
 {-insertNew_ v m = case Map.maxViewWithKey m of-}
@@ -168,7 +160,7 @@ footer = do
   pure ()
 
 header :: MonadWidget t m => m (Dynamic t (Maybe UserInfo))
-header = do
+header =
   el "header" navWidget
 
 loading :: MonadWidget t m => Dynamic t AttributeMap -> m ()
