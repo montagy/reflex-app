@@ -14,7 +14,6 @@ import Data.Monoid
 import qualified Data.Map as Map
 import Data.Time
 import qualified Data.Text as T
-import Data.Text (Text)
 
 import Common.Types
 import Api
@@ -29,7 +28,7 @@ page = do
   divClass "container" $ do
     rec
       dAttr <- holdDyn mempty $
-        ("class" =: "loading" <>) . (\b -> if b then mempty else  "style" =: "display:none")
+        ("class" =: "loading" <>) . (\b -> if b then mempty else  displayNone)
           <$> leftmost [True <$ eItemClick, False <$ eTopic]
       loading dAttr
       eTopic <- leftmost <$> sequence [getNewestTopic, fetchTopic eItemClick, pure eNewTopic]
@@ -48,14 +47,13 @@ topicInput :: MonadWidget t m => m (Event t Topic)
 topicInput = do
   rec
     title <- textInput $ def & setValue .~ ("" <$ submit)
-      & attributes .~ constDyn ("placeholder" =: "input a title" <> "class" =: "form-control")
+      & attributes .~ constDyn ("placeholder" =: "input a title" <> formControl)
 
     content <- textArea $ def & setValue .~ ("" <$ submit)
-      & attributes .~ constDyn ("placeholder" =: "input content" <> "class" =: "form-control")
+      & attributes .~ constDyn ("placeholder" =: "input content" <> formControl)
 
-    submit <- buttonAttr "submit" $ constDyn ("class" =: "form-control")
-  let
-      bTitle = current $ value title
+    submit <- buttonAttr "submit" $ constDyn formControl
+  let bTitle = current $ value title
       bContent = current $ value content
       f :: String -> String -> Topic
       f c t = Topic Nothing (T.pack t ) (T.pack c) []
@@ -71,8 +69,7 @@ topicInput = do
 --TODO return a selcted key Dynamic
 topicList' :: MonadWidget t m => [Topic] -> m (Event t ObjectId)
 topicList' ts = do
-  let
-      view :: (MonadWidget t m) => Topic -> m (Event t ObjectId)
+  let view :: (MonadWidget t m) => Topic -> m (Event t ObjectId)
       view t = do
         (dom, _) <- elAttr' "div" ("class" =: "xiaohua") $ text (T.unpack $ topicTitle t)
         pure $ fmapMaybe id $ topicId t <$ domEvent Click dom
@@ -99,8 +96,7 @@ topicView eTopic = do
 commentEntry :: MonadWidget t m => Dynamic t Topic ->  m (Event t [Comment])
 commentEntry dTopic = divClass "comment_input" $ do
   rec
-    let
-        newComment :: Topic -> CommentSide -> String -> Maybe Comment
+    let newComment :: Topic -> CommentSide -> String -> Maybe Comment
         newComment t s c =
           case topicId t of
             Nothing -> Nothing
@@ -114,28 +110,26 @@ commentEntry dTopic = divClass "comment_input" $ do
     eComment <- postComment' eNewComment
 
     drop <- dropdown Agree (constDyn selectList) $ def &
-      attributes .~ constDyn ("class" =: "form-control")
+      attributes .~ constDyn formControl
     area <- textArea $ def & setValue .~ ("" <$ submit) &
-      attributes .~ constDyn (mconcat ["class" =: "form-control", "row" =: "3"])
-    submit <- buttonAttr "submit" $ constDyn (mconcat ["type" =: "button", "class" =: "form-control"])
+      attributes .~ constDyn (mconcat [formControl, "row" =: "3"])
+    submit <- buttonAttr "submit" $ constDyn (mconcat ["type" =: "button", formControl])
 
   return eComment
 
 commentsView :: MonadWidget t m =>Dynamic t [Comment]-> m ()
 commentsView dComments = do
-  let
-    comment :: MonadWidget t m => Int -> Dynamic t Comment -> m ()
-    comment _ c = do
-      content <- mapDyn (T.unpack . commentContent) c
-      divClass "comment__item" $ do
-        _ <- el "p" $ dynText content
-        zone <- liftIO getCurrentTimeZone
-        time <- forDyn c $ \cm -> case commentId cm of
-                                  Nothing -> "未提交状态"
-                                  Just oid -> "time:" ++ prettyTime (utcToZonedTime zone $ timestamp oid)
-
-        _ <- el "p" $ dynText time
-        pure ()
+  let comment :: MonadWidget t m => Int -> Dynamic t Comment -> m ()
+      comment _ c = do
+        content <- mapDyn (T.unpack . commentContent) c
+        divClass "comment__item" $ do
+          _ <- el "p" $ dynText content
+          zone <- liftIO getCurrentTimeZone
+          time <- forDyn c $ \cm ->
+            case commentId cm of
+              Nothing -> "未提交状态"
+              Just oid -> "time:" ++ prettyTime (utcToZonedTime zone $ timestamp oid)
+          el "p" $ dynText time
 
   dComments' <- mapDyn (Map.fromList . zip [1..]) dComments
   rec

@@ -1,7 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecursiveDo #-}
 module Widgets.Login (
-  loginW
+  loginW,
+  formControl
 ) where
 
 import Reflex
@@ -11,8 +12,8 @@ import qualified Api
 import Utils
 import Data.Monoid
 
-formControl :: Reflex t => Dynamic t AttributeMap
-formControl = constDyn ("class" =: "form-control")
+formControl :: AttributeMap
+formControl = "class" =: "form-control"
 
 loginHeader :: MonadWidget t m => m (Event t ())
 loginHeader =
@@ -23,17 +24,17 @@ loginHeader =
 
 loginBody :: MonadWidget t m => m (Event t (Either String UserInfo))
 loginBody = divClass "modal-body" $ do
-  name <- textInput $ def & attributes .~ formControl
-  pwd <- textInput $ def & attributes .~ formControl
-  submit <- buttonAttr "Submit" formControl
+  name <- textInput $ def & attributes .~ constDyn formControl
+  pwd <- textInput $ def & attributes .~ constDyn formControl
+  submit <- buttonAttr "Submit" $ constDyn formControl
   user <- combineDyn User (value name) (value pwd)
   Api.login (tagDyn user submit)
 
 loginFooter :: MonadWidget t m => m (Event t (), Event t ())
 loginFooter =
   divClass "modal-footer" $ do
-    cancel <- buttonAttr "Cancel" formControl
-    submit <- buttonAttr "OK" formControl
+    cancel <- buttonAttr "Cancel" $ constDyn formControl
+    submit <- buttonAttr "OK" $ constDyn formControl
     pure (cancel, submit)
 
 loginModal :: MonadWidget t m => Event t () -> m (Event t (Either String UserInfo), Dynamic t AttributeMap)
