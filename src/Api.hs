@@ -87,7 +87,7 @@ login e = do
                 401 -> Left "not valid user"
                 _ -> Left "none"
 
-      {-storeInfo = liftIO . (\v -> S.setItem (S.pack "user") (textToJSString v) S.localStorage) . decodeUtf8 . toStrict . A.encode-}
-  result <- fmap f <$> performRequestAsync (req <$> e)
-  _ <- performEvent $ either (const $ return ()) (store "user") <$> result
-  pure result
+  eeUserInfo <- fmap f <$> performRequestAsync (req <$> e)
+  let eSucLogin = fmapMaybe (either (const Nothing) Just) eeUserInfo
+  performEvent_ $ store "user" <$> eSucLogin
+  pure eeUserInfo
