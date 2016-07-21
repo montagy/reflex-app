@@ -13,19 +13,8 @@ import qualified Data.Text.Lazy as LT
 import qualified Data.Text.Lazy.Builder as B
 import Data.Map (Map)
 import Codec.Binary.Base64.String
-{-import Data.Time-}
-{-import Control.Monad.IO.Class (liftIO)-}
+import Storage
 
-{-getBlogs:: MonadWidget t m => m (Event t [Article])-}
-{-getBlogs = do-}
-  {-let-}
-    {-req = xhrRequest "GET" "http://localhost:3030/blogs" def-}
-  {-event <- getPostBuild-}
-  {-response <- performRequestAsync (req <$ event)-}
-  {-return $ fmapMaybe decodeXhrResponse response-}
-
-{-getUsers :: XhrRequest-}
-{-getUsers = xhrRequest "GET" "http://localhost:3030/users" def-}
 host :: IsString a => a
 host = "http://localhost:3030/"
 
@@ -97,5 +86,8 @@ login e = do
                         Just userinfo -> Right userinfo
                 401 -> Left "not valid user"
                 _ -> Left "none"
-  fmap f <$> performRequestAsync (req <$> e)
 
+      {-storeInfo = liftIO . (\v -> S.setItem (S.pack "user") (textToJSString v) S.localStorage) . decodeUtf8 . toStrict . A.encode-}
+  result <- fmap f <$> performRequestAsync (req <$> e)
+  _ <- performEvent $ either (const $ return ()) (store "user") <$> result
+  pure result

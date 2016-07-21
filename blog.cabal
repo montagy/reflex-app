@@ -26,6 +26,7 @@ library
                  , Widgets.Login
                  , Css.Modal
                  , Utils
+                 , Storage
 
   build-depends: base >= 4.8 && < 5.0
                , reflex
