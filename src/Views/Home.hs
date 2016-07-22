@@ -78,10 +78,6 @@ topicList' ts = do
   es <- mapM view ts
   nubEvent (leftmost es)
 
-userHelper1 :: MonadWidget t m => Maybe UserInfo -> Dynamic t Topic -> m (Event t [Comment])
-userHelper1 Nothing _ = return never
-userHelper1 (Just _) t = commentEntry t
-
 topicView :: MonadWidget t m => Dynamic t (Maybe UserInfo) -> Event t Topic -> m ()
 topicView dUser eTopic = do
   dTopic <- holdDyn def eTopic
@@ -93,13 +89,13 @@ topicView dUser eTopic = do
       dCmts <- holdDyn [] $ leftmost [topicComments <$> eTopic, eCmts]
       commentsView dCmts
 
-      eCmts <- switchPromptly never =<< dyn =<< mapDyn (`userHelper1` dTopic) dUser
+      eCmts <- switchPromptly never =<< dyn =<< mapDyn (maybe (return never) (commentEntry dTopic)) dUser
     pure ()
   pure ()
 
 --TODO not load comment entry when topic is initialTopic
-commentEntry :: MonadWidget t m => Dynamic t Topic ->  m (Event t [Comment])
-commentEntry dTopic = divClass "comment_input" $ do
+commentEntry :: MonadWidget t m => Dynamic t Topic -> UserInfo ->  m (Event t [Comment])
+commentEntry dTopic _ = divClass "comment_input" $ do
   rec
     let newComment :: Topic -> CommentSide -> String -> Maybe Comment
         newComment t s c =
