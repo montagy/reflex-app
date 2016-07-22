@@ -38,7 +38,7 @@ page = do
       divClass "topic_wrapper" $ topicView dUser eTopic
       (eItemClick, eNewTopic) <- divClass "xiaohua_wrapper raiuds" $ do
         eObj <- divClass "topic__list" $ switchPromptlyDyn <$>  widgetHold (pure never) (topicList' <$> eTopicList)
-        eNewTopic' <- switchPromptly never =<< dyn =<< mapDyn (maybe (return never) topicInput) dUser
+        eNewTopic' <- switchPromptly never =<< dyn =<< mapDyn (maybe (pure never) topicInput) dUser
         pure (eObj, eNewTopic')
 
     pure ()
@@ -89,7 +89,7 @@ topicView dUser eTopic = do
       dCmts <- holdDyn [] $ leftmost [topicComments <$> eTopic, eCmts]
       commentsView dCmts
 
-      eCmts <- switchPromptly never =<< dyn =<< mapDyn (maybe (return never) (commentEntry dTopic)) dUser
+      eCmts <- switchPromptly never =<< dyn =<< mapDyn (maybe (pure never) (commentEntry dTopic)) dUser
     pure ()
   pure ()
 
@@ -116,7 +116,7 @@ commentEntry dTopic _ = divClass "comment_input" $ do
       attributes .~ constDyn (mconcat [formControl, "row" =: "3"])
     submit <- buttonAttr "submit" $ constDyn (mconcat ["type" =: "button", formControl])
 
-  return eComment
+  pure eComment
 
 commentsView :: MonadWidget t m =>Dynamic t [Comment]-> m ()
 commentsView dComments = do
@@ -164,7 +164,7 @@ navWidget =
         rec
           eInitUser <- confirmUser
           let eUserInfo = leftmost [eInitUser, eUserInfo']
-          eUserInfo' <- switchPromptlyDyn <$> widgetHold (return never) (userHelper <$> eUserInfo)
+          eUserInfo' <- switchPromptlyDyn <$> widgetHold (pure never) (userHelper <$> eUserInfo)
 
         holdDyn Nothing eUserInfo
 
