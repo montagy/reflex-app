@@ -38,17 +38,14 @@ page = do
       divClass "topic_wrapper" $ topicView dUser eTopic
       (eItemClick, eNewTopic) <- divClass "xiaohua_wrapper raiuds" $ do
         eObj <- divClass "topic__list" $ switchPromptlyDyn <$>  widgetHold (pure never) (topicList' <$> eTopicList)
-        let userHelper' :: MonadWidget t m => Maybe UserInfo -> m (Event t Topic)
-            userHelper' Nothing = return never
-            userHelper' (Just _) = divClass "topic__form" topicInput
-        eNewTopic' <- switchPromptly never =<< dyn =<< mapDyn userHelper' dUser
+        eNewTopic' <- switchPromptly never =<< dyn =<< mapDyn (maybe (return never) topicInput) dUser
         pure (eObj, eNewTopic')
 
     pure ()
   footer
 
-topicInput :: MonadWidget t m => m (Event t Topic)
-topicInput = do
+topicInput :: MonadWidget t m => UserInfo -> m (Event t Topic)
+topicInput _ = divClass "topic__form" $ do
   rec
     title <- textInput $ def & setValue .~ ("" <$ submit)
       & attributes .~ constDyn ("placeholder" =: "input a title" <> formControl)
