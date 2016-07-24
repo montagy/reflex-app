@@ -44,7 +44,7 @@ page = do
     pure ()
   footer
 
-topicInput :: MonadWidget t m => UserInfo -> m (Event t Topic)
+topicInput :: MonadWidget t m => Token -> m (Event t Topic)
 topicInput _ = divClass "topic__form" $ do
   rec
     title <- textInput $ def & setValue .~ ("" <$ submit)
@@ -78,7 +78,7 @@ topicList' ts = do
   es <- mapM view ts
   nubEvent (leftmost es)
 
-topicView :: MonadWidget t m => Dynamic t (Maybe UserInfo) -> Event t Topic -> m ()
+topicView :: MonadWidget t m => Dynamic t (Maybe Token) -> Event t Topic -> m ()
 topicView dUser eTopic = do
   dTopic <- holdDyn def eTopic
   divClass "topic radius" $ do
@@ -94,8 +94,8 @@ topicView dUser eTopic = do
   pure ()
 
 --TODO not load comment entry when topic is initialTopic
-commentEntry :: MonadWidget t m => Dynamic t Topic -> UserInfo ->  m (Event t [Comment])
-commentEntry dTopic _ = divClass "comment_input" $ do
+commentEntry :: MonadWidget t m => Dynamic t Topic -> Token ->  m (Event t [Comment])
+commentEntry dTopic tok = divClass "comment_input" $ do
   rec
     let newComment :: Topic -> CommentSide -> String -> Maybe Comment
         newComment t s c =
@@ -108,8 +108,8 @@ commentEntry dTopic _ = divClass "comment_input" $ do
 
     dNewComment <- newComment `mapDyn` dTopic `apDyn` value drop `apDyn` value area
     let eNewComment = fmapMaybe id $ tag (current dNewComment) submit
-    eComment <- postComment' eNewComment
 
+    eComment <- postComment' tok eNewComment
     drop <- dropdown Agree (constDyn selectList) $ def &
       attributes .~ constDyn formControl
     area <- textArea $ def & setValue .~ ("" <$ submit) &
@@ -148,14 +148,14 @@ footer = do
   el "footer"  $ el "div" $ text "This is a new text line"
   pure ()
 
-header :: MonadWidget t m => m (Dynamic t (Maybe UserInfo))
+header :: MonadWidget t m => m (Dynamic t (Maybe Token))
 header =
   el "header" navWidget
 
 loading :: MonadWidget t m => Dynamic t AttributeMap -> m ()
 loading dAttr = elDynAttr "div" dAttr $ text "loading..."
 
-navWidget :: MonadWidget t m => m (Dynamic t (Maybe UserInfo))
+navWidget :: MonadWidget t m => m (Dynamic t (Maybe Token))
 navWidget =
   el "nav" $
     divClass "nav__content" $ do
@@ -168,7 +168,7 @@ navWidget =
 
         holdDyn Nothing eUserInfo
 
-userHelper :: MonadWidget t m => Maybe UserInfo -> m (Event t (Maybe UserInfo))
+userHelper :: MonadWidget t m => Maybe Token -> m (Event t (Maybe Token))
 userHelper Nothing =  loginW
 userHelper (Just _) = do
   --TODO 用户功能,下拉菜单型

@@ -22,7 +22,7 @@ loginHeader =
     elAttr "h4" ("class" =: "modal-title") $ text "Modal title"
     pure btn
 
-loginBody :: MonadWidget t m => m (Event t (Either String UserInfo))
+loginBody :: MonadWidget t m => m (Event t (Either String Token))
 loginBody = divClass "modal-body" $ do
   name <- textInput $ def & attributes .~ constDyn formControl
   pwd <- textInput $ def & attributes .~ constDyn formControl
@@ -37,7 +37,7 @@ loginFooter =
     submit <- buttonAttr "OK" $ constDyn formControl
     pure (cancel, submit)
 
-loginModal :: MonadWidget t m => Event t () -> m (Event t (Either String UserInfo), Dynamic t AttributeMap)
+loginModal :: MonadWidget t m => Event t () -> m (Event t (Either String Token), Dynamic t AttributeMap)
 loginModal eToggle =
   divClass "modal-dialog" $ divClass "modal-content" $ do
     eClose <- loginHeader
@@ -52,7 +52,7 @@ loginModal eToggle =
     visiblility True = displayBlock
     visiblility False = displayNone
 
-loginW :: MonadWidget t m => m (Event t (Maybe UserInfo))
+loginW :: MonadWidget t m => m (Event t (Maybe Token))
 loginW = do
   rec
     modal <- buttonAttr "登陆" dAttr
