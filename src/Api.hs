@@ -108,10 +108,10 @@ login e = do
 
   eeUserInfo <- fmap f <$> performRequestAsync (req <$> e)
   let eSucLogin = fmapMaybe (either (const Nothing) Just) eeUserInfo
-  performEvent_ $ Storage.store "user" <$> eSucLogin
+  performEvent_ $ Storage.store "token" <$> eSucLogin
   pure eeUserInfo
 
 confirmUser :: MonadWidget t m => m (Event t (Maybe Token))
 confirmUser = do
   e <- getPostBuild
-  performEvent $ Storage.read "user" <$ e
+  performEvent $ Storage.read "token" <$ e

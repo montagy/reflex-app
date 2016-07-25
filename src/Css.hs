@@ -37,7 +37,7 @@ selectedText :: Css
 selectedText =
   text "::selection" ? do
     backgroundColor "#cce2ff"
-    color $ rgba 0 0 0 221
+    color $ rgba 0 0 0 0.86
 css :: Css
 css = do
   reset
@@ -153,9 +153,7 @@ css = do
     transitions [("border-color", sec 0.15, easeInOut, sec 0),
                 ("box-shadow", sec 0.15, easeInOut, sec 0)]
 
-  ".login-form" ? do
-    float floatRight
-
+  {-header ?-}
 
 reset :: Css
 reset = do

@@ -51,7 +51,3 @@ modal = do
     opacity 0.2
     textShadow nil (px 1) nil "#fff"
     cursor pointer
-
-
-
-

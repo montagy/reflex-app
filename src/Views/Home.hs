@@ -20,7 +20,7 @@ import Api
 import Data.Bson (timestamp, ObjectId)
 import Widgets.Login
 import Utils
-import Storage (remove)
+import qualified Storage
 
 
 page :: MonadWidget t m => m ()
@@ -144,9 +144,8 @@ commentsView dComments = do
   pure ()
 
 footer :: MonadWidget t m => m ()
-footer = do
-  el "footer"  $ el "div" $ text "This is a new text line"
-  pure ()
+footer =
+  el "footer" $ el "div" $ text "This is a new text line"
 
 header :: MonadWidget t m => m (Dynamic t (Maybe Token))
 header =
@@ -156,22 +155,21 @@ loading :: MonadWidget t m => Dynamic t AttributeMap -> m ()
 loading dAttr = elDynAttr "div" dAttr $ text "loading..."
 
 navWidget :: MonadWidget t m => m (Dynamic t (Maybe Token))
-navWidget =
-  el "nav" $
-    divClass "nav__content" $ do
-      text "吵架与看笑话"
-      divClass "login-logout" $ do
-        rec
-          eInitUser <- confirmUser
-          let eUserInfo = leftmost [eInitUser, eUserInfo']
-          eUserInfo' <- switchPromptlyDyn <$> widgetHold (pure never) (userHelper <$> eUserInfo)
+navWidget = do
+  divClass "head__title" $ text "吵架与看笑话"
+  divClass "login-logout" $ do
+    rec
+      eInitToken <- confirmUser
+      let eToken = leftmost [eInitToken, eToken']
 
-        holdDyn Nothing eUserInfo
+      eToken' <- switchPromptlyDyn <$> widgetHold (pure never) (loginOrLogoutW <$> eToken)
 
-userHelper :: MonadWidget t m => Maybe Token -> m (Event t (Maybe Token))
-userHelper Nothing =  loginW
-userHelper (Just _) = do
+    holdDyn Nothing eToken
+
+loginOrLogoutW :: MonadWidget t m => Maybe Token -> m (Event t (Maybe Token))
+loginOrLogoutW Nothing =  loginW
+loginOrLogoutW (Just _) = do
   --TODO 用户功能,下拉菜单型
   eLogout <- button "logout"
-  performEvent_ (remove "user" <$ eLogout)
+  performEvent_ (Storage.remove "user" <$ eLogout)
   pure $ Nothing <$ eLogout
