@@ -55,6 +55,7 @@ css = do
       backgroundColor "#2b5166"
       --配色
       color white
+      boxShadow nil (px 1) nil (rgba 0 0 0 64)
 
     footer <? do
       backgroundColor white
@@ -65,7 +66,6 @@ css = do
   header ? do
     width (pct 100)
     {-marginBottom $ px headerBottom-}
-    boxShadow nil (px 1) nil (rgba 0 0 0 64)
     -- flex
     display flex
     flexFlow row F.nowrap
