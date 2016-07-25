@@ -139,10 +139,15 @@ commentsView dComments = do
   rec
     dAgreeComments <- mapDyn (Map.filter (\x -> commentSide x == Agree)) dComments'
     dAgainstComments <- mapDyn (Map.filter (\x -> commentSide x == Against)) dComments'
-    _ <- divClass "comment__left" $
-      listWithKey dAgreeComments comment
-    _ <-divClass "comment__right" $
-      listWithKey dAgainstComments comment
+    _ <- divClass "comment__left" $ do
+      el "header" $ text "正方"
+      divClass "comment__container" $
+        listWithKey dAgreeComments comment
+
+    _ <-divClass "comment__right" $ do
+      el "header" $ text "反方"
+      divClass "comment__container" $
+        listWithKey dAgainstComments comment
 
   pure ()
 

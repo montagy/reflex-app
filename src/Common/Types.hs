@@ -62,5 +62,6 @@ instance FromJSON UserInfo
 data Token = Token
   { token :: Text
   } deriving (Generic)
+
 instance ToJSON Token
 instance FromJSON Token

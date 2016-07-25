@@ -129,12 +129,13 @@ css = do
     div <? do
       padding (px 20) (px 16) (px 10) (px 16)
       backgroundColor white
-    ".comment__item" ? do
-      sym2 padding (px 5) (px 4)
-      borderTop solid (px 1) "#f2f2f2"
 
-    ".comment__left" ? width (pct 49)
-    ".comment__right" ? width (pct 49)
+  ".comment__item" ? do
+    sym2 padding (px 5) (px 4)
+    borderTop solid (px 1) "#f2f2f2"
+
+  ".comment__left" ? width (pct 49)
+  ".comment__right" ? width (pct 49)
 
   ".comment_input" ? do
     width $ pct 100
