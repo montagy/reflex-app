@@ -50,8 +50,8 @@ data UserInfo = UserInfo
   { infoName :: Text
   } deriving (Eq, Show, Generic)
 data User = User
-  { username :: String
-  , password :: String
+  { username :: Text
+  , password :: Text
   } deriving (Eq, Show, Generic)
 
 instance ToJSON User

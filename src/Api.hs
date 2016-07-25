@@ -96,7 +96,7 @@ login e = do
   let
       req (User usr pwd) = xhrRequest "GET" (host <> "login") def {
         _xhrRequestConfig_headers =
-          "Authorization" =: ("Basic " <> encode (usr <> ":" <> pwd))
+          "Authorization" =: ("Basic " <> encode (T.unpack usr <> ":" <> T.unpack pwd))
       }
       f :: XhrResponse -> Either String Token
       f res = case _xhrResponse_status res of

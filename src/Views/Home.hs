@@ -37,7 +37,10 @@ page = do
       eTopicList <- leftmost <$> sequence [getTopicList, fetchTopicList eNewTopic]
       divClass "topic_wrapper" $ topicView dUser eTopic
       (eItemClick, eNewTopic) <- divClass "xiaohua_wrapper raiuds" $ do
-        eObj <- divClass "topic__list" $ switchPromptlyDyn <$>  widgetHold (pure never) (topicList' <$> eTopicList)
+        eObj <- divClass "topic__list" $ do
+          el "header"  $ text "Topic List"
+          elAttr "div" ("class" =: "list__content") $
+            switchPromptlyDyn <$>  widgetHold (pure never) (topicList <$> eTopicList)
         eNewTopic' <- switchPromptly never =<< dyn =<< mapDyn (maybe (pure never) topicInput) dUser
         pure (eObj, eNewTopic')
 
@@ -68,8 +71,8 @@ topicInput _ = divClass "topic__form" $ do
   postTopic eSubmitTopic
 
 --TODO return a selcted key Dynamic
-topicList' :: MonadWidget t m => [Topic] -> m (Event t ObjectId)
-topicList' ts = do
+topicList :: MonadWidget t m => [Topic] -> m (Event t ObjectId)
+topicList ts = do
   let view :: (MonadWidget t m) => Topic -> m (Event t ObjectId)
       view t = do
         (dom, _) <- elAttr' "div" ("class" =: "xiaohua") $ text (T.unpack $ topicTitle t)
@@ -170,6 +173,6 @@ loginOrLogoutW :: MonadWidget t m => Maybe Token -> m (Event t (Maybe Token))
 loginOrLogoutW Nothing =  loginW
 loginOrLogoutW (Just _) = do
   --TODO 用户功能,下拉菜单型
-  eLogout <- button "logout"
+  eLogout <- buttonAttr "logout" (constDyn formControl)
   performEvent_ (Storage.remove "user" <$ eLogout)
   pure $ Nothing <$ eLogout

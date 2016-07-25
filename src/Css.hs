@@ -14,12 +14,9 @@ import Css.Modal (modal)
 bs :: ByteString
 bs = TE.encodeUtf8 . TL.toStrict . render $ css
 
-headerHeight, headerBottom, mainWidth, footerHeight :: Double
-headerHeight = 42
-headerBottom = 20
-mainWidth    = 1080
-footerHeight = 40
-{-gutter = 10-}
+headerHeight, footerHeight :: Double
+headerHeight = 2.5
+footerHeight = 2.2
 
 fixedTop :: Css
 fixedTop = do
@@ -42,36 +39,45 @@ css :: Css
 css = do
   reset
   modal
+  html ? fontSize (px 10)
   body ? do
     backgroundColor "#e9e9e9"
     fontFamily [] [monospace]
+    paddingTop $ em headerHeight
+    paddingBottom $ em footerHeight
+    --font
     fontSize $ px 14
-    lineHeight $ em 1.4285
-    paddingTop $ px (headerHeight + headerBottom)
-    paddingBottom $ px footerHeight
-    header ? do
-      width (pct 100)
+    lineHeight $ em $ 20.0 / 14.0
+    header <? do
       position fixed
       fixedTop
-      marginBottom $ px headerBottom
-      {-height $ px headerHeight-}
-      boxShadow nil (px 1) nil (rgba 0 0 0 64)
-      --配色
       backgroundColor "#2b5166"
+      --配色
       color white
-      --
-      nav ? do
-        fontSize $ px (headerHeight / 2)
-        lineHeight  (px headerHeight)
-        textAlign (alignSide sideCenter)
-    footer ? do
-      width $ pct 100
-      position fixed
-      fixedBottom
-      backgroundColor blue
-      fontSize $ px (footerHeight / 2)
-      lineHeight $ px footerHeight
-      {-div <? lineHeight (rem 2)-}
+
+    footer <? do
+      backgroundColor white
+      marginTop $ px 100
+      sym2 padding (px 40) nil
+
+
+  header ? do
+    width (pct 100)
+    {-marginBottom $ px headerBottom-}
+    boxShadow nil (px 1) nil (rgba 0 0 0 64)
+    -- flex
+    display flex
+    flexFlow row F.nowrap
+    justifyContent spaceAround
+    -- fontSize
+    fontSize $ em 2
+    lineHeight $ em 1.4285
+  footer ? do
+    width $ pct 100
+    fontSize $ em $ footerHeight / 2
+    lineHeight $ em footerHeight
+    borderTop solid (px 1) "#e5e5e5"
+    {-div <? lineHeight (rem 2)-}
 
   selectedText
   ".loading" ? do
@@ -80,9 +86,9 @@ css = do
     width $ pct 100
     textAlign (alignSide sideCenter)
   ".container" ? do
-    sym2 margin nil auto
+    margin (em 1) auto nil auto
     width (pct 100)
-    maxWidth $ px mainWidth
+    maxWidth $ pct 80
     display flex
     flexFlow row F.nowrap
     justifyContent spaceBetween
@@ -96,8 +102,7 @@ css = do
         sym padding (px 10)
         backgroundColor white
         cursor pointer
-        hover & do
-          backgroundColor blue
+        hover & backgroundColor blue
 
 
   ".topic" ? do
@@ -128,11 +133,8 @@ css = do
       sym2 padding (px 5) (px 4)
       borderTop solid (px 1) "#f2f2f2"
 
-    ".comment__left" ? do
-      width $ pct 49
-
-    ".comment__right" ? do
-      width $ pct 49
+    ".comment__left" ? width (pct 49)
+    ".comment__right" ? width (pct 49)
 
   ".comment_input" ? do
     width $ pct 100

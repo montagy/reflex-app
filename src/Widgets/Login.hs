@@ -10,7 +10,9 @@ import Reflex.Dom
 import Common.Types
 import qualified Api
 import Utils
-import Data.Monoid
+import Data.Monoid ((<>))
+import Data.Function (on)
+import qualified Data.Text as T
 
 formControl :: AttributeMap
 formControl = "class" =: "form-control"
@@ -27,7 +29,7 @@ loginBody = divClass "modal-body" $ do
   name <- textInput $ def & attributes .~ constDyn formControl
   pwd <- textInput $ def & attributes .~ constDyn formControl
   submit <- buttonAttr "Submit" $ constDyn formControl
-  user <- combineDyn User (value name) (value pwd)
+  user <- combineDyn (User `on` T.pack) (value name) (value pwd)
   Api.login (tagDyn user submit)
 
 loginFooter :: MonadWidget t m => m (Event t (), Event t ())
