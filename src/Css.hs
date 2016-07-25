@@ -10,6 +10,7 @@ import qualified Data.Text.Lazy as TL
 import qualified Data.Text.Encoding as TE
 import Data.Monoid ((<>))
 import Css.Modal (modal)
+import Css.Comment (comment)
 
 bs :: ByteString
 bs = TE.encodeUtf8 . TL.toStrict . render $ css
@@ -80,6 +81,7 @@ css = do
     {-div <? lineHeight (rem 2)-}
 
   selectedText
+  comment
   ".loading" ? do
     position absolute
     top $ px 50
@@ -104,7 +106,6 @@ css = do
         cursor pointer
         hover & backgroundColor blue
 
-
   ".topic" ? do
     width $ pct 100
     padding (px 10) (px 16) (px 25) (px 16)
@@ -119,27 +120,6 @@ css = do
     ".topic__content" ? do
       marginTop $ px 15
       lineHeight $ rem 1.5
-  ".comment" ? do
-    marginTop $ px 20
-    paddingTop $ px 10
-    lineHeight $ rem 2
-    display flex
-    flexFlow row F.wrap
-    justifyContent spaceBetween
-    div <? do
-      padding (px 20) (px 16) (px 10) (px 16)
-      backgroundColor white
-
-  ".comment__item" ? do
-    sym2 padding (px 5) (px 4)
-    borderTop solid (px 1) "#f2f2f2"
-
-  ".comment__left" ? width (pct 49)
-  ".comment__right" ? width (pct 49)
-
-  ".comment_input" ? do
-    width $ pct 100
-    marginTop $ px 20
 
   ".radius" ? sym borderRadius (px 5)
   textarea # ".form-control" ? height auto

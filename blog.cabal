@@ -25,6 +25,7 @@ library
                  , Views.Post
                  , Widgets.Login
                  , Css.Modal
+                 , Css.Comment
                  , Utils
                  , Storage
 
