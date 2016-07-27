@@ -39,7 +39,7 @@ selectedText =
 css :: Css
 css = do
   reset
-  html ? fontSize (pct 100)
+  html ? fontSize (px 14)
   body ? do
     backgroundColor "#e9e9e9"
     fontFamily [] [monospace]
@@ -47,14 +47,14 @@ css = do
     paddingBottom $ em footerHeight
     --font
     fontSize $ em 1
-    lineHeight $ em $ 20.0 / 14.0
+    lineHeight $ unitless $ 20.0 / 14.0
     header <? do
       position fixed
       fixedTop
       backgroundColor "#2b5166"
       --配色
       color white
-      boxShadow nil (px 1) nil (rgba 0 0 0 64)
+      boxShadow nil (px 1) nil (rgba 0 0 0 0.25)
 
     footer <? do
       backgroundColor white
@@ -70,11 +70,11 @@ css = do
     justifyContent spaceAround
     -- fontSize
     fontSize $ em 2
-    lineHeight $ em $ 20.0 / 14.0
+    --lineHeight $ em $ 20.0 / 14.0
   footer ? do
     width $ pct 100
     fontSize $ em $ footerHeight / 2
-    lineHeight $ em footerHeight
+    --lineHeight $ em footerHeight
     borderTop solid (px 1) "#e5e5e5"
     {-div <? lineHeight (rem 2)-}
 
@@ -118,14 +118,14 @@ css = do
 
     ".topic__content" ? do
       marginTop $ px 15
-      lineHeight $ rem 1.5
+      lineHeight $ unitless 1.5
 
   ".radius" ? sym borderRadius (px 5)
   textarea # ".form-control" ? height auto
   ".form-control" ? do
-    lineHeight $ em 2
+    lineHeight $ unitless 2
     display block
-    height $ px 34
+    --height $ px 34
     sym2 padding (px 6) (px 12)
     color "#555"
     backgroundColor "#fff"

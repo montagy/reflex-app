@@ -10,7 +10,7 @@ comment = do
   ".comment" ? do
     marginTop $ px 20
     paddingTop $ px 10
-    lineHeight $ rem 2
+    --lineHeight $ unitless 2
     display flex
     flexFlow row F.wrap
     justifyContent spaceBetween
