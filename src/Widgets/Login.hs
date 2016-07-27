@@ -13,6 +13,9 @@ import Utils
 import Data.Monoid ((<>))
 import Data.Function (on)
 import qualified Data.Text as T
+import System.Random
+import Control.Monad.IO.Class (liftIO)
+import Control.Monad
 
 formControl :: AttributeMap
 formControl = "class" =: "form-control"
@@ -24,13 +27,23 @@ loginHeader =
     elAttr "h4" ("class" =: "modal-title") $ text "Modal title"
     pure btn
 
-loginBody :: MonadWidget t m => m (Event t (Either String Token))
-loginBody = divClass "modal-body" $ do
+{-
+ -loginBody :: MonadWidget t m => m (Event t (Either String Token))
+ -loginBody = divClass "modal-body" $ do
+ -  name <- textInput $ def & attributes .~ constDyn formControl
+ -  pwd <- textInput $ def & attributes .~ constDyn formControl
+ -  submit <- buttonAttr "Submit" $ constDyn formControl
+ -  user <- combineDyn (User `on` T.pack) (value name) (value pwd)
+ -  Api.login (tagDyn user submit)
+ -}
+--another loginBody
+onlyNeedName :: MonadWidget t m => m (Event t (Either String Token))
+onlyNeedName = divClass "modal-body" $ do
   name <- textInput $ def & attributes .~ constDyn formControl
-  pwd <- textInput $ def & attributes .~ constDyn formControl
   submit <- buttonAttr "Submit" $ constDyn formControl
-  user <- combineDyn (User `on` T.pack) (value name) (value pwd)
-  Api.login (tagDyn user submit)
+  pwd <- liftIO $ replicateM 6 $ randomRIO ('1', '9')
+  let eUser = (\n -> on User T.pack n pwd) <$> tagDyn (value name) submit
+  Api.login eUser
 
 loginFooter :: MonadWidget t m => m (Event t (), Event t ())
 loginFooter =
@@ -43,7 +56,8 @@ loginModal :: MonadWidget t m => Event t () -> m (Event t (Either String Token),
 loginModal eToggle =
   divClass "modal-dialog" $ divClass "modal-content" $ do
     eClose <- loginHeader
-    eeUserInfo <- loginBody
+    --eeUserInfo <- loginBody
+    eeUserInfo <- onlyNeedName
     (eCancel, eOk) <- loginFooter
     dModalAttr' <- holdDyn False $
       leftmost [True<$ eToggle, False<$ eClose, False <$ eCancel, False <$ eOk]

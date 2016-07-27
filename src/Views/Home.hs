@@ -179,5 +179,5 @@ loginOrLogoutW Nothing =  loginW
 loginOrLogoutW (Just _) = do
   --TODO 用户功能,下拉菜单型
   eLogout <- buttonAttr "logout" (constDyn formControl)
-  performEvent_ (Storage.remove "user" <$ eLogout)
+  performEvent_ (Storage.remove "token" <$ eLogout)
   pure $ Nothing <$ eLogout

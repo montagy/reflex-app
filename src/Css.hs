@@ -39,15 +39,14 @@ selectedText =
 css :: Css
 css = do
   reset
-  modal
-  html ? fontSize (px 10)
+  html ? fontSize (pct 100)
   body ? do
     backgroundColor "#e9e9e9"
     fontFamily [] [monospace]
     paddingTop $ em headerHeight
     paddingBottom $ em footerHeight
     --font
-    fontSize $ px 14
+    fontSize $ em 1
     lineHeight $ em $ 20.0 / 14.0
     header <? do
       position fixed
@@ -65,14 +64,13 @@ css = do
 
   header ? do
     width (pct 100)
-    {-marginBottom $ px headerBottom-}
     -- flex
     display flex
     flexFlow row F.nowrap
     justifyContent spaceAround
     -- fontSize
     fontSize $ em 2
-    lineHeight $ em 1.4285
+    lineHeight $ em $ 20.0 / 14.0
   footer ? do
     width $ pct 100
     fontSize $ em $ footerHeight / 2
@@ -82,6 +80,7 @@ css = do
 
   selectedText
   comment
+  modal
   ".loading" ? do
     position absolute
     top $ px 50
@@ -136,7 +135,6 @@ css = do
     transitions [("border-color", sec 0.15, easeInOut, sec 0),
                 ("box-shadow", sec 0.15, easeInOut, sec 0)]
 
-  {-header ?-}
 
 reset :: Css
 reset = do
