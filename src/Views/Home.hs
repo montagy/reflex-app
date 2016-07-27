@@ -60,7 +60,7 @@ topicInput _ = divClass "topic__form" $ do
   let bTitle = current $ value title
       bContent = current $ value content
       f :: String -> String -> Topic
-      f c t = Topic Nothing (T.pack t ) (T.pack c) []
+      f c t = def{topicTitle = T.pack t, topicContent = T.pack c}
       g :: Topic -> Bool
       g Topic{..} =
         let notnull = not . T.null
@@ -106,7 +106,7 @@ commentEntry dTopic tok = divClass "comment_input" $ do
             Nothing -> Nothing
             Just id' -> case maybeStrip c of
                           Nothing -> Nothing
-                          Just c' -> Just $ Comment Nothing id' s c'
+                          Just c' -> Just $ def{commentTopicId = Just id', commentSide = s, commentContent = c'}
         selectList = Agree =: "agree" <> Against =: "against"
 
     dNewComment <- newComment `mapDyn` dTopic `apDyn` value drop `apDyn` value area
