@@ -17,9 +17,6 @@ import System.Random
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad
 
-formControl :: AttributeMap
-formControl = "class" =: "form-control"
-
 loginHeader :: MonadWidget t m => m (Event t ())
 loginHeader =
   divClass "modal-header" $ do
@@ -71,8 +68,8 @@ loginModal eToggle =
 loginW :: MonadWidget t m => m (Event t (Maybe Token))
 loginW = do
   rec
-    modal <- buttonAttr "登陆" dAttr
-    dAttr <- mapDyn (either (const displayBlock) (const displayNone)) dUserInfo
+    modal <- buttonAttr "Login" dAttr
+    dAttr <- mapDyn (either (const $ displayBlock <> formControl) (const $ displayNone <> formControl)) dUserInfo
     dModalAttr' <- mapDyn (("class" =: "modal") <>) dModalAttr
     (eeUserInfo, dModalAttr) <- elDynAttr "modal" dModalAttr' $
       loginModal modal

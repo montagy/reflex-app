@@ -27,6 +27,9 @@ displayNone, displayBlock :: AttributeMap
 displayNone = "style" =: "display:none;"
 displayBlock = "style" =: "display:block;"
 
+formControl :: AttributeMap
+formControl = "class" =: "form-control"
+
 stripString :: String -> Text
 stripString  = T.strip . T.pack
 

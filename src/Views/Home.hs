@@ -48,27 +48,31 @@ page = do
   footer
 
 topicInput :: MonadWidget t m => Token -> m (Event t Topic)
-topicInput _ = divClass "topic__form" $ do
-  rec
-    title <- textInput $ def & setValue .~ ("" <$ submit)
-      & attributes .~ constDyn ("placeholder" =: "input a title" <> formControl)
+topicInput _ = do
+  eToggle <- buttonAttr "+" (constDyn $ "class" =: "form-control topic__toggle")
+  dIsToogled <- toggle False eToggle
+  dAttr <- mapDyn (("class" =: "topic__form" <>) . (\b -> if b then displayBlock else displayNone)) dIsToogled
+  elDynAttr "div" dAttr $ do
+    rec
+      title <- textInput $ def & setValue .~ ("" <$ submit)
+        & attributes .~ constDyn ("placeholder" =: "input a title" <> formControl)
 
-    content <- textArea $ def & setValue .~ ("" <$ submit)
-      & attributes .~ constDyn ("placeholder" =: "input content" <> formControl)
+      content <- textArea $ def & setValue .~ ("" <$ submit)
+        & attributes .~ constDyn ("placeholder" =: "input content" <> formControl)
 
-    submit <- buttonAttr "submit" $ constDyn formControl
-  let bTitle = current $ value title
-      bContent = current $ value content
-      f :: String -> String -> Topic
-      f c t = def{topicTitle = T.pack t, topicContent = T.pack c}
-      g :: Topic -> Bool
-      g Topic{..} =
-        let notnull = not . T.null
-          in
-        notnull topicTitle && notnull topicContent
-      eSubmitTopic = ffilter g $ attachWith f bContent (tag bTitle submit)
+      submit <- buttonAttr "submit" $ constDyn formControl
+    let bTitle = current $ value title
+        bContent = current $ value content
+        f :: String -> String -> Topic
+        f c t = def{topicTitle = T.pack t, topicContent = T.pack c}
+        g :: Topic -> Bool
+        g Topic{..} =
+          let notnull = not . T.null
+            in
+          notnull topicTitle && notnull topicContent
+        eSubmitTopic = ffilter g $ attachWith f bContent (tag bTitle submit)
 
-  postTopic eSubmitTopic
+    postTopic eSubmitTopic
 
 --TODO return a selcted key Dynamic
 topicList :: MonadWidget t m => [Topic] -> m (Event t ObjectId)
@@ -140,12 +144,12 @@ commentsView dComments = do
     dAgreeComments <- mapDyn (Map.filter (\x -> commentSide x == Agree)) dComments'
     dAgainstComments <- mapDyn (Map.filter (\x -> commentSide x == Against)) dComments'
     _ <- divClass "comment__left" $ do
-      el "header" $ text "正方"
+      el "header" $ text "Agree"
       divClass "comment__container" $
         listWithKey dAgreeComments comment
 
     _ <-divClass "comment__right" $ do
-      el "header" $ text "反方"
+      el "header" $ text "Against"
       divClass "comment__container" $
         listWithKey dAgainstComments comment
 
@@ -164,7 +168,7 @@ loading dAttr = elDynAttr "div" dAttr $ text "loading..."
 
 navWidget :: MonadWidget t m => m (Dynamic t (Maybe Token))
 navWidget = do
-  divClass "head__title" $ text "吵架与看笑话"
+  divClass "head__title" $ text "Argue Or Laugh"
   divClass "login-logout" $ do
     rec
       eInitToken <- confirmUser
