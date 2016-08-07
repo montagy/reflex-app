@@ -15,6 +15,14 @@ modal = do
     left nil
     zIndex 1050
     overflow hidden
+    before & do
+      position fixed
+      content $ stringContent ""
+      top nil
+      right nil
+      bottom nil
+      left nil
+      backgroundColor $ rgba 0 0 0 0.7
 
   ".modal-dialog" ? do
     position relative

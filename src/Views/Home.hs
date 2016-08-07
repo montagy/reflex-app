@@ -49,7 +49,7 @@ page = do
 
 topicInput :: MonadWidget t m => Token -> m (Event t Topic)
 topicInput _ = do
-  eToggle <- buttonAttr "New" (constDyn $ "class" =: "form-control topic__toggle")
+  eToggle <- buttonAttr "New" (constDyn $ "class" =: "topic__toggle")
   dIsToogled <- toggle False eToggle
   dAttr <- mapDyn (("class" =: "topic__form" <>) . (\b -> if b then displayBlock else displayNone)) dIsToogled
   elDynAttr "div" dAttr $ do
