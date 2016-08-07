@@ -11,6 +11,7 @@ import qualified Data.Text.Encoding as TE
 import Data.Monoid ((<>))
 import Css.Modal (modal)
 import Css.Comment (comment)
+import Css.Button (topicToggle)
 
 bs :: ByteString
 bs = TE.encodeUtf8 . TL.toStrict . render $ css
@@ -135,6 +136,7 @@ css = do
     transitions [("border-color", sec 0.15, easeInOut, sec 0),
                 ("box-shadow", sec 0.15, easeInOut, sec 0)]
 
+  topicToggle
 
 reset :: Css
 reset = do

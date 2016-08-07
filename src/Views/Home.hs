@@ -38,7 +38,7 @@ page = do
       divClass "topic_wrapper" $ topicView dUser eTopic
       (eItemClick, eNewTopic) <- divClass "xiaohua_wrapper raiuds" $ do
         eObj <- divClass "topic__list" $ do
-          el "header"  $ text "Topic List"
+          el "header"  $ text "Hot Topic"
           elAttr "div" ("class" =: "list__content") $
             switchPromptlyDyn <$>  widgetHold (pure never) (topicList <$> eTopicList)
         eNewTopic' <- switchPromptly never =<< dyn =<< mapDyn (maybe (pure never) topicInput) dUser
@@ -49,7 +49,7 @@ page = do
 
 topicInput :: MonadWidget t m => Token -> m (Event t Topic)
 topicInput _ = do
-  eToggle <- buttonAttr "+" (constDyn $ "class" =: "form-control topic__toggle")
+  eToggle <- buttonAttr "New" (constDyn $ "class" =: "form-control topic__toggle")
   dIsToogled <- toggle False eToggle
   dAttr <- mapDyn (("class" =: "topic__form" <>) . (\b -> if b then displayBlock else displayNone)) dIsToogled
   elDynAttr "div" dAttr $ do
