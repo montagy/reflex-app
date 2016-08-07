@@ -56,3 +56,8 @@ topicToggle =
         opacity 1
         transitionDuration $ sec 0.7
 
+{-btn :: Css-}
+{-btn = do-}
+  {-".btn" ? do-}
+
+

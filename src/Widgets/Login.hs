@@ -36,15 +36,15 @@ loginHeader =
 --another loginBody
 onlyNeedName :: MonadWidget t m => m (Event t (Either String Token))
 onlyNeedName = divClass "modal-body" $ do
-  name <- textInput $ def & attributes .~ constDyn formControl
-  submit <- buttonAttr "Submit" $ constDyn formControl
+  name <- divClass "form-group" $ textInput $ def & attributes .~ constDyn ("class" =: "form-control")
+  submit <- divClass "form-group" $ buttonAttr "Submit" $ constDyn ("class" =: "btn")
   pwd <- liftIO $ replicateM 6 $ randomRIO ('1', '9')
   let eUser = (\n -> on User T.pack n pwd) <$> tagDyn (value name) submit
   Api.login eUser
 
 loginFooter :: MonadWidget t m => m (Event t (), Event t ())
 loginFooter =
-  divClass "modal-footer" $ do
+  divClass "modal-footer form-group" $ do
     cancel <- buttonAttr "Cancel" $ constDyn formControl
     submit <- buttonAttr "OK" $ constDyn formControl
     pure (cancel, submit)

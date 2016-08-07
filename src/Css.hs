@@ -53,13 +53,12 @@ css = do
       position fixed
       fixedTop
       backgroundColor "#2b5166"
-      --配色
       color white
       boxShadow nil (px 1) nil (rgba 0 0 0 0.25)
 
     footer <? do
       backgroundColor white
-      marginTop $ px 100
+      marginTop $ px 200
       sym2 padding (px 40) nil
 
 
@@ -70,14 +69,11 @@ css = do
     flexFlow row F.nowrap
     justifyContent spaceAround
     -- fontSize
-    fontSize $ em 2
-    --lineHeight $ em $ 20.0 / 14.0
+    fontSize $ em 1.5
   footer ? do
     width $ pct 100
     fontSize $ em $ footerHeight / 2
-    --lineHeight $ em footerHeight
     borderTop solid (px 1) "#e5e5e5"
-    {-div <? lineHeight (rem 2)-}
 
   selectedText
   comment
@@ -89,16 +85,16 @@ css = do
     textAlign (alignSide sideCenter)
   ".container" ? do
     margin (em 1) auto nil auto
-    width (pct 100)
-    maxWidth $ pct 80
+    width (pct 80)
     display flex
     flexFlow row F.nowrap
     justifyContent spaceBetween
     ".topic_wrapper" ? width (pct 66)
 
-    ".xiaohua_wrapper" ? do
+    aside ? do
       width $ pct 33
       textAlign (alignSide sideCenter)
+      sym borderRadius (px 4)
       ".xiaohua" ? do
         boxShadow nil (px 2) (px 5) (rgba 0 0 0 51)
         sym padding (px 10)
@@ -121,22 +117,33 @@ css = do
       marginTop $ px 15
       lineHeight $ unitless 1.5
 
-  ".radius" ? sym borderRadius (px 5)
   textarea # ".form-control" ? height auto
-  ".form-control" ? do
-    lineHeight $ unitless 2
-    display block
-    --height $ px 34
+  ".btn" ? do
+    display inlineBlock
     sym2 padding (px 6) (px 12)
-    color "#555"
+    cursor pointer
+    color "#333"
     backgroundColor "#fff"
     border solid (px 1) "#ccc"
     sym borderRadius (px 4)
-    insetBoxShadow inset nil (px 1) (px 1) (rgba 0 0 0 19)
+
+  ".form-group" ? marginBottom (px 15)
+  ".form-control" ? do
+    display block
+    width $ pct 100
+    height $ px 34
+    sym2 padding (px 6) (px 12)
+    color "#555"
+    backgroundColor white
+    border solid (px 1) "#ccc"
+    sym borderRadius (px 4)
+    insetBoxShadow inset nil (px 1) (px 1) $ rgba 0 0 0 0.075
     transitions [("border-color", sec 0.15, easeInOut, sec 0),
                 ("box-shadow", sec 0.15, easeInOut, sec 0)]
-
   topicToggle
+  ".topic__form" ? do
+    marginTop (px 10)
+    sym2 padding (px 10) (px 5)
 
 reset :: Css
 reset = do
@@ -144,6 +151,12 @@ reset = do
     sym margin nil
     sym padding nil
     color "#333"
+  button <> input <> select <> textarea ? do
+    sym margin nil
+    "font-family" -: "inherit"
+    fontSize inherit
+    lineHeight inherit
+  p ? margin nil nil (px 10) nil
 
   star ? boxSizing borderBox
 

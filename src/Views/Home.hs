@@ -22,7 +22,7 @@ import Widgets.Login
 import Utils
 import qualified Storage
 
-
+import Data.Maybe (fromMaybe)
 page :: MonadWidget t m => m ()
 page = do
   dUser <- header
@@ -36,7 +36,7 @@ page = do
       --TODO 刷新按钮来获得随机或最新的topicList
       eTopicList <- leftmost <$> sequence [getTopicList, fetchTopicList eNewTopic]
       divClass "topic_wrapper" $ topicView dUser eTopic
-      (eItemClick, eNewTopic) <- divClass "xiaohua_wrapper raiuds" $ do
+      (eItemClick, eNewTopic) <- el "aside" $ do
         eObj <- divClass "topic__list" $ do
           el "header"  $ text "Hot Topic"
           elAttr "div" ("class" =: "list__content") $
@@ -54,13 +54,13 @@ topicInput _ = do
   dAttr <- mapDyn (("class" =: "topic__form" <>) . (\b -> if b then displayBlock else displayNone)) dIsToogled
   elDynAttr "div" dAttr $ do
     rec
-      title <- textInput $ def & setValue .~ ("" <$ submit)
-        & attributes .~ constDyn ("placeholder" =: "input a title" <> formControl)
+      title <- divClass "form-group" $ textInput $ def & setValue .~ ("" <$ submit)
+        & attributes .~ constDyn ("placeholder" =: "input a title" <> "class" =: "form-control")
 
-      content <- textArea $ def & setValue .~ ("" <$ submit)
-        & attributes .~ constDyn ("placeholder" =: "input content" <> formControl)
+      content <- divClass "form-group" $ textArea $ def & setValue .~ ("" <$ submit)
+        & attributes .~ constDyn ("placeholder" =: "input content" <> "class" =: "form-control")
 
-      submit <- buttonAttr "submit" $ constDyn formControl
+      submit <- divClass "form-group" $ buttonAttr "submit" $ constDyn ("class" =: "btn")
     let bTitle = current $ value title
         bContent = current $ value content
         f :: String -> String -> Topic
@@ -88,10 +88,10 @@ topicList ts = do
 topicView :: MonadWidget t m => Dynamic t (Maybe Token) -> Event t Topic -> m ()
 topicView dUser eTopic = do
   dTopic <- holdDyn def eTopic
-  divClass "topic radius" $ do
+  divClass "topic" $ do
     divClass "topic__title" $ dynText =<< mapDyn (T.unpack . topicTitle) dTopic
     divClass "topic__content" $ dynText =<< mapDyn (T.unpack . topicContent) dTopic
-  divClass "comment radius" $ do
+  divClass "comment" $ do
     rec
       dCmts <- holdDyn [] $ leftmost [topicComments <$> eTopic, eCmts]
       commentsView dCmts
@@ -117,11 +117,11 @@ commentEntry dTopic tok = divClass "comment_input" $ do
     let eNewComment = fmapMaybe id $ tag (current dNewComment) submit
 
     eComment <- postComment' tok eNewComment
-    drop <- dropdown Agree (constDyn selectList) $ def &
-      attributes .~ constDyn formControl
-    area <- textArea $ def & setValue .~ ("" <$ submit) &
-      attributes .~ constDyn (mconcat [formControl, "row" =: "3"])
-    submit <- buttonAttr "submit" $ constDyn (mconcat ["type" =: "button", formControl])
+    drop <- divClass "form-group" $ dropdown Agree (constDyn selectList) $ def
+      & attributes .~ constDyn ("class" =: "form-control")
+    area <- divClass "form-group" $ textArea $ def & setValue .~ ("" <$ submit) &
+      attributes .~ constDyn (mconcat ["class" =: "form-control", "row" =: "3"])
+    submit <- divClass "form-group" $ buttonAttr "submit" $ constDyn (mconcat ["type" =: "button", "class" =: "btn"])
 
   pure eComment
 
@@ -130,8 +130,10 @@ commentsView dComments = do
   let comment :: MonadWidget t m => Int -> Dynamic t Comment -> m ()
       comment _ c = do
         content <- mapDyn (T.unpack . commentContent) c
+        dName <- mapDyn (T.unpack . fromMaybe "NONE" . commentUser) c
         divClass "comment__item" $ do
-          _ <- el "p" $ dynText content
+          divClass "comment__name" $ dynText dName
+          el "p" $ dynText content
           zone <- liftIO getCurrentTimeZone
           time <- forDyn c $ \cm ->
             case commentId cm of
