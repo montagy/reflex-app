@@ -45,7 +45,7 @@ page = do
         pure (eObj, eNewTopic')
 
     pure ()
-  footer
+  {-footer-}
 
 topicInput :: MonadWidget t m => Token -> m (Event t Topic)
 topicInput _ = do
@@ -53,6 +53,7 @@ topicInput _ = do
   dIsToogled <- toggle False eToggle
   dAttr <- mapDyn (("class" =: "topic__form" <>) . (\b -> if b then displayBlock else displayNone)) dIsToogled
   elDynAttr "div" dAttr $ do
+    el "header" $ text "Create a new topic"
     rec
       title <- divClass "form-group" $ textInput $ def & setValue .~ ("" <$ submit)
         & attributes .~ constDyn ("placeholder" =: "input a title" <> "class" =: "form-control")
@@ -129,17 +130,18 @@ commentsView :: MonadWidget t m =>Dynamic t [Comment]-> m ()
 commentsView dComments = do
   let comment :: MonadWidget t m => Int -> Dynamic t Comment -> m ()
       comment _ c = do
-        content <- mapDyn (T.unpack . commentContent) c
-        dName <- mapDyn (T.unpack . fromMaybe "NONE" . commentUser) c
+        dContent <- mapDyn (T.unpack . commentContent) c
+        dName <- mapDyn (T.unpack . maybe "匿名:" (<> ":") . commentUser) c
+        dC <- combineDyn (<>) dName dContent
         divClass "comment__item" $ do
-          divClass "comment__name" $ dynText dName
-          el "p" $ dynText content
+          {-divClass "comment__name" $ dynText dName-}
+          divClass "comment__content" $ dynText dC
           zone <- liftIO getCurrentTimeZone
           time <- forDyn c $ \cm ->
             case commentId cm of
               Nothing -> "未提交状态"
               Just oid -> "time:" ++ prettyTime (utcToZonedTime zone $ timestamp oid)
-          el "p" $ dynText time
+          divClass "comment_time" $ dynText time
 
   dComments' <- mapDyn (Map.fromList . zip [1..]) dComments
   rec
