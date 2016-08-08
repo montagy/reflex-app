@@ -20,7 +20,11 @@ comment = do
 
   ".comment__item" ? do
     sym2 padding (px 5) (px 4)
-    borderTop solid (px 1) "#f2f2f2"
+    borderBottom solid (px 1) $ rgb 217 217 217
+    {-".coment__name" ? do-}
+    {-".comment__content" ? -}
+    {-".comment__time" ? undefined-}
+
 
   ".comment__left" ? width (pct 49)
   ".comment__right" ? width (pct 49)
