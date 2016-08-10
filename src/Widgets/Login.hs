@@ -16,6 +16,7 @@ import qualified Data.Text as T
 import System.Random
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad
+import Data.Either (isRight)
 
 loginHeader :: MonadWidget t m => m (Event t ())
 loginHeader =
@@ -47,8 +48,12 @@ onlyNeedName = divClass "modal-body" $ do
         eUser = (\n -> on User T.pack n pwd) <$> eRightName
         eErr = either id (const "") <$> result
 
-    dErrMsg <- holdDyn "" $ (<> " length less than 4") <$>
-      leftmost [ffilter (\s -> length s <= 4) eName, eErr, "waiting for response" <$ submit, "login success" <$ result]
+    dErrMsg <- holdDyn "" $
+      leftmost [ (<> " length less than 4") <$> ffilter (\s -> length s <= 4) eName
+               , eErr
+               , "waiting for response" <$ submit
+               , "login success" <$ ffilter isRight result
+               ]
     result <- Api.login eUser
   pure result
 
