@@ -21,7 +21,7 @@ loginHeader :: MonadWidget t m => m (Event t ())
 loginHeader =
   divClass "modal-header" $ do
     btn <- buttonAttr "X" $ constDyn ("class" =: "close")
-    elAttr "h4" ("class" =: "modal-title") $ text "Modal title"
+    elAttr "h4" ("class" =: "modal-title") $ text "Input a user name"
     pure btn
 
 {-
@@ -36,11 +36,20 @@ loginHeader =
 --another loginBody
 onlyNeedName :: MonadWidget t m => m (Event t (Either String Token))
 onlyNeedName = divClass "modal-body" $ do
-  name <- divClass "form-group" $ textInput $ def & attributes .~ constDyn ("class" =: "form-control")
-  submit <- divClass "form-group" $ buttonAttr "Submit" $ constDyn ("class" =: "btn")
-  pwd <- liftIO $ replicateM 6 $ randomRIO ('1', '9')
-  let eUser = (\n -> on User T.pack n pwd) <$> tagDyn (value name) submit
-  Api.login eUser
+  rec
+    elDynAttr "label" (constDyn $ "class" =: "login_info") $ dynText dErrMsg
+    name <- divClass "form-group" $ textInput $ def & attributes .~ constDyn ("class" =: "form-control")
+    submit <- divClass "form-group" $ buttonAttr "Submit" $ constDyn ("class" =: "btn")
+    pwd <- liftIO $ replicateM 6 $ randomRIO ('1', '9')
+
+    let eName = tagDyn (value name) submit
+        eRightName = ffilter (\s -> length s > 4) eName
+        eUser = (\n -> on User T.pack n pwd) <$> eRightName
+        eErr = either id (const "") <$> result
+
+    dErrMsg <- holdDyn "" $ (<> " length less than 4") <$> ffilter (\s -> length s <= 4) (leftmost [eName, eErr])
+    result <- Api.login eUser
+  pure result
 
 loginFooter :: MonadWidget t m => m (Event t (), Event t ())
 loginFooter =

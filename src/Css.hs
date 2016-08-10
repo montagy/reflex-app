@@ -145,6 +145,8 @@ css = do
     marginTop (px 10)
     sym2 padding (px 10) (px 5)
 
+  ".login_info" ? color black
+
 reset :: Css
 reset = do
   html <> body ? do
