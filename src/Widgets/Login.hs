@@ -47,7 +47,8 @@ onlyNeedName = divClass "modal-body" $ do
         eUser = (\n -> on User T.pack n pwd) <$> eRightName
         eErr = either id (const "") <$> result
 
-    dErrMsg <- holdDyn "" $ (<> " length less than 4") <$> ffilter (\s -> length s <= 4) (leftmost [eName, eErr])
+    dErrMsg <- holdDyn "" $ (<> " length less than 4") <$>
+      leftmost [ffilter (\s -> length s <= 4) eName, eErr, "waiting for response" <$ submit, "login success" <$ result]
     result <- Api.login eUser
   pure result
 
