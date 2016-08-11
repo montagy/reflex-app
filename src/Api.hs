@@ -24,6 +24,7 @@ import Control.Lens.Getter ((^.))
 import qualified Data.Text as T
 
 host :: IsString a => a
+{-host = "http://191.101.14.233:3030/"-}
 host = "http://localhost:3030/"
 
 fetchByEvent :: (MonadWidget t m, FromJSON b) => Event t XhrRequest -> m (Event t b)

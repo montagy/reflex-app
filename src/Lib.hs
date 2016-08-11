@@ -1,5 +1,6 @@
 module Lib (
-  app
+  app,
+  noCssApp
 ) where
 
 {-import Reflex-}
@@ -20,3 +21,6 @@ import qualified Views.Home as Home
 
 app :: IO ()
 app = mainWidgetWithCss bs $ void Home.page
+
+noCssApp :: IO ()
+noCssApp = mainWidget $ void Home.page

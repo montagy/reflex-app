@@ -59,7 +59,13 @@ library
   ghc-prof-options: -fprof-auto
   ghc-options: -Wall -fwarn-tabs -funbox-strict-fields -O2
   default-language:    Haskell2010
+
+Flag product
+  Description: code with no css 
+  Default: False
 executable blog
+  if flag(product) 
+    cpp-options: -DPRODUCT
   hs-source-dirs:      app
   main-is:             Main.hs
   
@@ -70,4 +76,4 @@ executable blog
   default-language:    Haskell2010
   ghc-prof-options: -fprof-auto
   ghc-options: -threaded -Wall -fwarn-tabs -funbox-strict-fields -O2 
-  --cpp-options: -DGHCJS_BROWSER
+  cpp-options: -DGHCJS_BROWSER
