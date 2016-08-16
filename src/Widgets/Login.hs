@@ -1,8 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecursiveDo #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Widgets.Login (
   loginW,
-  formControl
 ) where
 
 import Reflex
@@ -11,8 +13,8 @@ import Common.Types
 import qualified Api
 import Utils
 import Data.Monoid ((<>))
-import Data.Function (on)
 import qualified Data.Text as T
+import Data.Text (Text)
 import System.Random
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad
@@ -25,31 +27,21 @@ loginHeader =
     elAttr "h4" ("class" =: "modal-title") $ text "Input a user name"
     pure btn
 
-{-
- -loginBody :: MonadWidget t m => m (Event t (Either String Token))
- -loginBody = divClass "modal-body" $ do
- -  name <- textInput $ def & attributes .~ constDyn formControl
- -  pwd <- textInput $ def & attributes .~ constDyn formControl
- -  submit <- buttonAttr "Submit" $ constDyn formControl
- -  user <- combineDyn (User `on` T.pack) (value name) (value pwd)
- -  Api.login (tagDyn user submit)
- -}
---another loginBody
-onlyNeedName :: MonadWidget t m => m (Event t (Either String Token))
-onlyNeedName = divClass "modal-body" $ do
+loginBody :: MonadWidget t m => m (Event t (Either Text Token))
+loginBody = divClass "modal-body" $ do
   rec
     elDynAttr "label" (constDyn $ "class" =: "login_info") $ dynText dErrMsg
     name <- divClass "form-group" $ textInput $ def & attributes .~ constDyn ("class" =: "form-control")
     submit <- divClass "form-group" $ buttonAttr "Submit" $ constDyn ("class" =: "btn")
     pwd <- liftIO $ replicateM 6 $ randomRIO ('1', '9')
 
-    let eName = tagDyn (value name) submit
-        eRightName = ffilter (\s -> length s > 4) eName
-        eUser = (\n -> on User T.pack n pwd) <$> eRightName
-        eErr = either id (const "") <$> result
+    let eName = tagPromptlyDyn (value name) submit
+        eRightName = ffilter (\s -> T.length s > 4) eName
+        eUser = (\n -> User n (T.pack pwd)) <$> eRightName
+        eErr = either id (const "" :: Token -> Text) <$> result
 
     dErrMsg <- holdDyn "" $
-      leftmost [ (<> " length less than 4") <$> ffilter (\s -> length s <= 4) eName
+      leftmost [ (<> " length less than 4") <$> ffilter (\s -> T.length s <= 4) eName
                , eErr
                , "waiting for response" <$ submit
                , "login success" <$ ffilter isRight result
@@ -64,16 +56,17 @@ loginFooter =
     submit <- buttonAttr "OK" $ constDyn formControl
     pure (cancel, submit)
 
-loginModal :: MonadWidget t m => Event t () -> m (Event t (Either String Token), Dynamic t AttributeMap)
+loginModal :: MonadWidget t m => Event t () -> m (Event t (Either Text Token), Dynamic t AttributeMap)
 loginModal eToggle =
   divClass "modal-dialog" $ divClass "modal-content" $ do
     eClose <- loginHeader
     --eeUserInfo <- loginBody
-    eeUserInfo <- onlyNeedName
+    eeUserInfo <- loginBody
     (eCancel, eOk) <- loginFooter
     dModalAttr' <- holdDyn False $
       leftmost [True<$ eToggle, False<$ eClose, False <$ eCancel, False <$ eOk]
-    dModalAttr <- mapDyn visiblility dModalAttr'
+
+    let dModalAttr = visiblility <$> dModalAttr'
     pure (eeUserInfo, dModalAttr)
 
   where
@@ -84,8 +77,8 @@ loginW :: MonadWidget t m => m (Event t (Maybe Token))
 loginW = do
   rec
     modal <- buttonAttr "Login" dAttr
-    dAttr <- mapDyn (either (const $ displayBlock <> formControl) (const $ displayNone <> formControl)) dUserInfo
-    dModalAttr' <- mapDyn (("class" =: "modal") <>) dModalAttr
+    let dAttr = either (const $ displayBlock <> formControl) (const $ displayNone <> formControl) <$> dUserInfo
+        dModalAttr' = (("class" =: "modal") <>) <$> dModalAttr
     (eeUserInfo, dModalAttr) <- elDynAttr "modal" dModalAttr' $
       loginModal modal
     dUserInfo <- holdDyn (Left "") eeUserInfo

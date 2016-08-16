@@ -3,6 +3,8 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE FlexibleContexts #-}
 module Views.Home (
   page
 ) where
@@ -14,6 +16,7 @@ import Data.Monoid
 import qualified Data.Map as Map
 import Data.Time
 import qualified Data.Text as T
+import Data.Text (Text)
 
 import Common.Types
 import Api
@@ -22,7 +25,6 @@ import Widgets.Login
 import Utils
 import qualified Storage
 
-import Data.Maybe (fromMaybe)
 page :: MonadWidget t m => m ()
 page = do
   dUser <- header
@@ -41,7 +43,8 @@ page = do
           el "header"  $ text "Hot Topic"
           elAttr "div" ("class" =: "list__content") $
             switchPromptlyDyn <$>  widgetHold (pure never) (topicList <$> eTopicList)
-        eNewTopic' <- switchPromptly never =<< dyn =<< mapDyn (maybe (pure never) topicInput) dUser
+
+        eNewTopic' <- switchPromptly never =<< dyn (maybe (pure never) topicInput <$> dUser)
         pure (eObj, eNewTopic')
 
     pure ()
@@ -51,7 +54,7 @@ topicInput :: MonadWidget t m => Token -> m (Event t Topic)
 topicInput _ = do
   eToggle <- buttonAttr "New" (constDyn $ "class" =: "topic__toggle")
   dIsToogled <- toggle False eToggle
-  dAttr <- mapDyn (("class" =: "topic__form" <>) . (\b -> if b then displayBlock else displayNone)) dIsToogled
+  let dAttr = (("class" =: "topic__form" <>) . (\b -> if b then displayBlock else displayNone)) <$> dIsToogled
   elDynAttr "div" dAttr $ do
     el "header" $ text "Create a new topic"
     rec
@@ -64,8 +67,8 @@ topicInput _ = do
       submit <- divClass "form-group" $ buttonAttr "submit" $ constDyn ("class" =: "btn")
     let bTitle = current $ value title
         bContent = current $ value content
-        f :: String -> String -> Topic
-        f c t = def{topicTitle = T.pack t, topicContent = T.pack c}
+        f :: Text -> Text -> Topic
+        f c t = def{topicTitle = t, topicContent = c}
         g :: Topic -> Bool
         g Topic{..} =
           let notnull = not . T.null
@@ -80,7 +83,7 @@ topicList :: MonadWidget t m => [Topic] -> m (Event t ObjectId)
 topicList ts = do
   let view :: (MonadWidget t m) => Topic -> m (Event t ObjectId)
       view t = do
-        (dom, _) <- elAttr' "div" ("class" =: "xiaohua") $ text (T.unpack $ topicTitle t)
+        (dom, _) <- elAttr' "div" ("class" =: "xiaohua") $ text (topicTitle t)
         pure $ fmapMaybe id $ topicId t <$ domEvent Click dom
 
   es <- mapM view ts
@@ -90,14 +93,14 @@ topicView :: MonadWidget t m => Dynamic t (Maybe Token) -> Event t Topic -> m ()
 topicView dUser eTopic = do
   dTopic <- holdDyn def eTopic
   divClass "topic" $ do
-    divClass "topic__title" $ dynText =<< mapDyn (T.unpack . topicTitle) dTopic
-    divClass "topic__content" $ dynText =<< mapDyn (T.unpack . topicContent) dTopic
+    divClass "topic__title" $ dynText $ topicTitle <$> dTopic
+    divClass "topic__content" $ dynText $ topicContent <$> dTopic
   divClass "comment" $ do
     rec
       dCmts <- holdDyn [] $ leftmost [topicComments <$> eTopic, eCmts]
       commentsView dCmts
 
-      eCmts <- switchPromptly never =<< dyn =<< mapDyn (maybe (pure never) (commentEntry dTopic)) dUser
+      eCmts <- switchPromptly never =<< dyn (maybe (pure never) (commentEntry dTopic) <$> dUser)
     pure ()
   pure ()
 
@@ -105,17 +108,16 @@ topicView dUser eTopic = do
 commentEntry :: MonadWidget t m => Dynamic t Topic -> Token ->  m (Event t [Comment])
 commentEntry dTopic tok = divClass "comment_input" $ do
   rec
-    let newComment :: Topic -> CommentSide -> String -> Maybe Comment
+    let newComment :: Topic -> CommentSide -> Text -> Maybe Comment
         newComment t s c =
           case topicId t of
             Nothing -> Nothing
-            Just id' -> case maybeStrip c of
-                          Nothing -> Nothing
-                          Just c' -> Just $ def{commentTopicId = Just id', commentSide = s, commentContent = c'}
+            Just id' -> case T.strip c of
+                          "" -> Nothing
+                          c' -> Just $ def{commentTopicId = Just id', commentSide = s, commentContent = c'}
         selectList = Agree =: "agree" <> Against =: "against"
-
-    dNewComment <- newComment `mapDyn` dTopic `apDyn` value drop `apDyn` value area
-    let eNewComment = fmapMaybe id $ tag (current dNewComment) submit
+        dNewComment = newComment <$>  dTopic <*> value drop <*> value area
+        eNewComment = fmapMaybe id $ tag (current dNewComment) submit
 
     eComment <- postComment' tok eNewComment
     drop <- divClass "form-group" $ dropdown Agree (constDyn selectList) $ def
@@ -130,38 +132,37 @@ commentsView :: MonadWidget t m =>Dynamic t [Comment]-> m ()
 commentsView dComments = do
   let comment :: MonadWidget t m => Int -> Dynamic t Comment -> m ()
       comment _ c = do
-        dContent <- mapDyn (T.unpack . commentContent) c
-        dName <- mapDyn (T.unpack . maybe "匿名:" (<> ":") . commentUser) c
-        dC <- combineDyn (<>) dName dContent
+        let dContent = commentContent <$> c
+            dName = (maybe "匿名:" (<> ":") . commentUser) <$> c
+            dC = zipDynWith (<>) dName dContent
         divClass "comment__item" $ do
-          {-divClass "comment__name" $ dynText dName-}
           divClass "comment__content" $ dynText dC
           zone <- liftIO getCurrentTimeZone
-          time <- forDyn c $ \cm ->
-            case commentId cm of
-              Nothing -> "未提交状态"
-              Just oid -> "time:" ++ prettyTime (utcToZonedTime zone $ timestamp oid)
+          let time = ffor c $ \cm ->
+                case commentId cm of
+                  Nothing -> "未提交状态"
+                  Just oid -> "time:" <> prettyTime (utcToZonedTime zone $ timestamp oid)
           divClass "comment_time" $ dynText time
 
-  dComments' <- mapDyn (Map.fromList . zip [1..]) dComments
-  rec
-    dAgreeComments <- mapDyn (Map.filter (\x -> commentSide x == Agree)) dComments'
-    dAgainstComments <- mapDyn (Map.filter (\x -> commentSide x == Against)) dComments'
-    _ <- divClass "comment__left" $ do
-      el "header" $ text "Agree"
-      divClass "comment__container" $
-        listWithKey dAgreeComments comment
+      dComments' = (Map.fromList . zip [1..]) <$> dComments
+      dAgreeComments = Map.filter (\x -> commentSide x == Agree) <$> dComments'
+      dAgainstComments = Map.filter (\x -> commentSide x == Against) <$> dComments'
 
-    _ <-divClass "comment__right" $ do
-      el "header" $ text "Against"
-      divClass "comment__container" $
-        listWithKey dAgainstComments comment
+  _ <- divClass "comment__left" $ do
+    el "header" $ text "Agree"
+    divClass "comment__container" $
+      listWithKey dAgreeComments comment
+
+  _ <-divClass "comment__right" $ do
+    el "header" $ text "Against"
+    divClass "comment__container" $
+      listWithKey dAgainstComments comment
 
   pure ()
 
-footer :: MonadWidget t m => m ()
-footer =
-  el "footer" $ el "div" $ text "This is a new text line"
+--footer :: MonadWidget t m => m ()
+--footer =
+  --el "footer" $ el "div" $ text "This is a new text line"
 
 header :: MonadWidget t m => m (Dynamic t (Maybe Token))
 header =

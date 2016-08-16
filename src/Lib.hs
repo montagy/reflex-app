@@ -1,6 +1,6 @@
+{-# LANGUAGE CPP #-}
 module Lib (
   app,
-  noCssApp
 ) where
 
 {-import Reflex-}
@@ -20,7 +20,8 @@ import qualified Views.Home as Home
  -}
 
 app :: IO ()
+#ifdef PRODUCT
+app = mainWidget $ void Home.page
+#else
 app = mainWidgetWithCss bs $ void Home.page
-
-noCssApp :: IO ()
-noCssApp = mainWidget $ void Home.page
+#endif

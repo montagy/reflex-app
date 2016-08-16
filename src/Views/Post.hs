@@ -1,3 +1,6 @@
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Views.Post (
   page
 ) where
@@ -15,7 +18,7 @@ page =
 postBlogV :: MonadWidget t m => m ()
 postBlogV =
   el "form" $ do
-    eTitle <- textInput def
-    eContent <- textArea def
+    _ <- textInput def
+    _ <- textArea def
     _ <- button "Submit"
     pure ()

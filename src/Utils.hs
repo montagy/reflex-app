@@ -1,27 +1,26 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ViewPatterns #-}
-
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE FlexibleContexts #-}
 module Utils where
 
 import Reflex
 import Reflex.Dom
 import Data.Time
-import Data.Map (Map)
 import qualified Data.Text as T
 import Data.Text (Text)
 
-prettyTime :: FormatTime t => t -> String
-prettyTime = formatTime defaultTimeLocale "%F %T"
+prettyTime :: FormatTime t => t -> Text
+prettyTime = T.pack . formatTime defaultTimeLocale "%F %T"
 
 nubEvent :: (MonadWidget t m, Eq a) => Event t a -> m (Event t a)
 nubEvent e = do
   d <- holdDyn Nothing (Just <$> e)
-  return $ fmapMaybe id $ updated (nubDyn d)
+  return $ fmapMaybe id $ updated (uniqDyn d)
 
-buttonAttr :: (MonadWidget t m) => String -> Dynamic t (Map String String) -> m (Event t ())
+buttonAttr :: (MonadWidget t m) => Text -> Dynamic t AttributeMap -> m (Event t ())
 buttonAttr t attr = do
-  (element, _) <- elDynAttr' "button" attr $ text t
-  pure $ domEvent Click element
+  (ele, _) <- elDynAttr' "button" attr $ text t
+  pure $ domEvent Click ele
 
 displayNone, displayBlock :: AttributeMap
 displayNone = "style" =: "display:none;"
@@ -29,13 +28,6 @@ displayBlock = "style" =: "display:block;"
 
 formControl :: AttributeMap
 formControl = "class" =: "btn"
-
-stripString :: String -> Text
-stripString  = T.strip . T.pack
-
-maybeStrip :: String -> Maybe Text
-maybeStrip (stripString -> "") = Nothing
-maybeStrip (stripString -> trimmed) = Just trimmed
 
 -- | Add a new value to a map; automatically choose an unused key
 {-insertNew_ :: (Enum k, Ord k) => v -> Map k v -> Map k v-}
