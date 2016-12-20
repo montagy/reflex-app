@@ -1,0 +1,31 @@
+resolver: lts-7.3
+compiler: ghcjs-0.2.1.9007003_ghc-8.0.1
+compiler-check: match-exact
+
+setup-info:
+  ghcjs:
+    source:
+      ghcjs-0.2.1.9007003_ghc-8.0.1:
+          url: http://ghcjs.tolysz.org/ghc-8.0-2016-10-11-lts-7.3-9007003.tar.gz
+          sha1: 3196fd5eaed670416083cf3678396d02c50096de
+
+allow-newer: true
+
+packages:
+  - location: '.'
+  - location: 
+      git: https://github.com/reflex-frp/reflex.git
+      commit: a63aba90bdea5ae5b3e1506d468613bdfedcdfa3
+    extra-dep: true
+  - location: 
+      git: https://github.com/reflex-frp/reflex-dom.git
+      commit: ed3b790f81f8396324fc9a3495de9c911119facc
+    extra-dep: true
+  - location:
+      git: https://github.com/isomorphism/these.git
+      commit: b3d74b7a5a68349489ad4079f85e79b6a5c34538
+    extra-dep: true
+extra-deps:
+- ref-tf-0.4.0.1
+- ghcjs-dom-0.2.4.0
+- zenc-0.1.1

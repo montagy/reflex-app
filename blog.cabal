@@ -34,8 +34,8 @@ library
                  , Storage
 
   build-depends: base >= 4.8 && < 5.0
-               , reflex == 0.5.*
-               , reflex-dom == 0.4.*
+               , reflex
+               , reflex-dom
                , ghcjs-dom
                , text
                , file-embed
@@ -45,7 +45,7 @@ library
                , aeson
                , time
                , containers
-               , servant-router
+               --, servant-router
                , servant
                , mtl
                , transformers
@@ -54,10 +54,10 @@ library
                , bson
                , base64-string
                , data-default
-               , jose >= 0.4.0.2
+               , jose
                , unordered-containers
                , lens
-               , random >= 1.1
+               , random
   ghc-prof-options: -fprof-auto
   ghc-options: -Wall -fwarn-tabs -funbox-strict-fields -O2
   --other-extensions: TypeFamilies
@@ -70,7 +70,7 @@ executable blog
   main-is:             Main.hs
   -- other-modules:       
   -- other-extensions:    
-  build-depends:       base >=4.8 && <4.9
+  build-depends:       base >=4.8 && < 5.0
                      , blog
   default-language:    Haskell2010
   ghc-prof-options: -fprof-auto

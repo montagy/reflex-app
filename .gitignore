@@ -1,3 +1,4 @@
 dist
 .cs*
 *.tags
+.stack-work
