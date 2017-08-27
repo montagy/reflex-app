@@ -28,8 +28,6 @@ import Data.Text (Text)
 import qualified Data.Text.Encoding as TE
 import GHCJS.DOM.XMLHttpRequest (sendString)
 
-instance IsXhrPayload Text where
-  sendXhrPayload = sendString
 host :: IsString a => a
 #ifdef PRODUCT
 host = "http://191.101.14.233:3030/"
